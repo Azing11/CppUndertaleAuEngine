@@ -44,12 +44,12 @@ private:
 
         // 基础位置
         float baseX_ = 0; //320
-        float baseY_ = 160; //160
+        float baseY_ = 200; //160
 
         //用于平滑移动
         int ifSmooth = true;
         float vX_ = 320;
-        float vY_ = 160;
+        float vY_ = 200;
 
         float legBaseX_ = (baseX_ - 43);
         float legBaseY_ = (baseY_ - 56);

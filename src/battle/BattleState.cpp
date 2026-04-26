@@ -8,7 +8,7 @@ BattleState::BattleState(AssetManager& assets)
     , sansHeadSprite_(assets.getTexture(Res::sansTexture::SANS_HEAD_IDLE))  // 直接传 texture 构造
     , sansBodySprite_(assets.getTexture(Res::sansTexture::SANS_BODY_IDLE))
     , sansLegSprite_(assets.getTexture(Res::sansTexture::SANS_LEG))
-    , box({200.f, 150.f})
+    , box({0.f, 0.f})
 {
     auto headBounds = sansHeadSprite_.getLocalBounds();
     sansHeadSprite_.setOrigin({headBounds.size.x / 2, headBounds.size.y / 1.5f});
@@ -19,9 +19,9 @@ BattleState::BattleState(AssetManager& assets)
     sansBodySprite_.setScale({0.5f, 0.5f});
 
     //box
-    box.setFillColor(sf::Color(0, 0, 255, 80));// 设置填充颜色
+    box.setFillColor(sf::Color(0, 0, 0, 0));// 设置填充颜色
     box.setOutlineColor(sf::Color::White);// 设置边框颜色
-    box.setOutlineThickness(4.f);// 设置边框粗细
+    box.setOutlineThickness(5.f);// 设置边框粗细
 
 }
 
@@ -46,7 +46,8 @@ void BattleState::handleEvent(const sf::Event& event) {
 void BattleState::update(float dt) {
     float t = battleClock.getElapsedTime().asMilliseconds();
     updateSansAnimation(t);
-    setBoxPosition(10, 10);
+    setBoxPosition(20, 230);
+    setBoxSize(600, 150);
 }
 
 void BattleState::render(sf::RenderWindow& window) { 
@@ -87,6 +88,10 @@ void BattleState::drawSans(sf::RenderWindow& window){
 
 void BattleState::setBoxPosition(float x, float y){
     box.setPosition(sf::Vector2(x, y));
+}
+
+void BattleState::setBoxSize(float weight, float height){
+    box.setSize(sf::Vector2f(weight, height));
 }
 //draw box
 void BattleState::drawBox(sf::RenderWindow& window){
