@@ -62,6 +62,7 @@ private:
         float SmoothFactor_ = 0.1f;  // 1/10
     }sans_; //可以设置多审
     
+    //boxConfig
     struct boxConfig
     {
         float x = 0;
@@ -72,7 +73,14 @@ private:
     };
     
     //辅助函数
+
+    //sans
     void updateSansAnimation(float t);
     void drawSans(sf::RenderWindow& window);
-    void drawBox();
+
+    //box
+    void setBoxPosition(float x, float y);
+    void setBoxSize(float weight, float height);
+    void updateBox(float t);
+    void drawBox(sf::RenderWindow& window);
 };

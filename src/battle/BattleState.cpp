@@ -78,6 +78,6 @@ void BattleState::drawSans(sf::RenderWindow& window){
 }
 
 //draw box
-void BattleState::drawBox(){
+void BattleState::drawBox(sf::RenderWindow& window){
     
 }
