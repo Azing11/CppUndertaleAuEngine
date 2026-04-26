@@ -23,6 +23,8 @@ private:
     sf::Sprite sansHeadSprite_;
     sf::Sprite sansBodySprite_;
 
+    //box
+    sf::RectangleShape box;
 
     sf::Music music_;
     sf::Clock battleClock;  // 用于计时

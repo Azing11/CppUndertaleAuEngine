@@ -13,7 +13,6 @@ Game::Game()
     assets_.loadTexture("sans_leg", "resources/sprites/Sans/leg/sans_leg_.png");
 
     assets_.loadSound("music", "resources/audio/music/music.mp3");
-    //assets_.loadFont("main", "assets/fonts/DeterminationSans.ttf");
     
     // 初始状态
     states_.push(std::make_unique<BattleState>(assets_));
