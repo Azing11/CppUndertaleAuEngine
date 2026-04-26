@@ -19,10 +19,9 @@ BattleState::BattleState(AssetManager& assets)
     sansBodySprite_.setScale({0.5f, 0.5f});
 
     //box
-    box.setFillColor(sf::Color(100, 150, 255, 180));// 设置填充颜色
+    box.setFillColor(sf::Color::Black);// 设置填充颜色
     box.setOutlineColor(sf::Color::White);// 设置边框颜色
     box.setOutlineThickness(5.f);// 设置边框粗细
-
 
 }
 
