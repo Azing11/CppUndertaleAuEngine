@@ -45,12 +45,6 @@ private:
         // 基础位置
         float baseX_ = 0; //320
         float baseY_ = 200; //160
-
-        //用于平滑移动
-        int ifSmooth = true;
-        float vX_ = 320;
-        float vY_ = 200;
-
         float legBaseX_ = (baseX_ - 43);
         float legBaseY_ = (baseY_ - 56);
         float legWidth_ = 90;
@@ -60,6 +54,10 @@ private:
         float legOffsetX_ = -43.0f;
         float legOffsetY_ = -56.0f;
 
+        //用于平滑移动
+        bool ifSmooth_ = true;
+        float vX_ = 320;
+        float vY_ = 200;
         //平滑速率
         float SmoothFactor_ = 0.1f;  // 1/10
     }sans_; //可以设置多审
@@ -67,12 +65,22 @@ private:
     //boxConfig
     struct boxConfig
     {
-        float x = 0;
-        float y = 0;
+        float x_ = 0;
+        float y_ = 0;
 
-        float weight = 0;
-        float height = 0;
-    };
+        float weight_ = 0;
+        float height_ = 0;
+
+        //Smooth
+        bool ifSmooth_ = true;
+        float SmoothFactor_ = 0.1f;
+
+        float targetX_ = 0;
+        float targetY_ = 0;
+
+        float targetWeight_ = 0;
+        float targetHeight_ = 0;
+    }box_;
     
     //辅助函数
 
@@ -81,8 +89,8 @@ private:
     void drawSans(sf::RenderWindow& window);
 
     //box
-    void setBoxPosition(float x, float y);
-    void setBoxSize(float weight, float height);
-    void updateBox(float t);
+    void setBoxPosition(float x, float y, bool ifSmooth);
+    void setBoxSize(float weight, float height, bool ifSmooth);
+    void updateBox();
     void drawBox(sf::RenderWindow& window);
 };

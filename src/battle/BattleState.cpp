@@ -46,8 +46,9 @@ void BattleState::handleEvent(const sf::Event& event) {
 void BattleState::update(float dt) {
     float t = battleClock.getElapsedTime().asMilliseconds();
     updateSansAnimation(t);
-    setBoxPosition(20, 230);
-    setBoxSize(600, 150);
+    updateBox();
+    setBoxPosition(20, 230, true);
+    setBoxSize(600, 150, true);
 }
 
 void BattleState::render(sf::RenderWindow& window) { 
@@ -63,7 +64,7 @@ void BattleState::updateSansAnimation(float t) {
     sans_.swayY_ = std::sin(sans_.time_ * sans_.swayScorpY_) * sans_.swayFreqY_;   // 垂直摆动幅度（频率更高）
 
 
-    if(sans_.ifSmooth){
+    if(sans_.ifSmooth_){
     sans_.baseX_ += (sans_.vX_ - sans_.baseX_) * sans_.SmoothFactor_;
     sans_.baseY_ += (sans_.vY_ - sans_.baseY_) * sans_.SmoothFactor_;
     }
@@ -86,12 +87,50 @@ void BattleState::drawSans(sf::RenderWindow& window){
     window.draw(sansHeadSprite_);
 }
 
-void BattleState::setBoxPosition(float x, float y){
-    box.setPosition(sf::Vector2(x, y));
+void BattleState::setBoxPosition(float x, float y ,bool ifSmooth){
+    if(ifSmooth){
+        box_.ifSmooth_ = true;
+        box_.targetX_ = x;
+        box_.targetY_ = y;
+
+    }
+    else{
+        box_.ifSmooth_ = false;
+        box_.x_ = x;
+        box_.y_ = y;
+    }
 }
 
-void BattleState::setBoxSize(float weight, float height){
-    box.setSize(sf::Vector2f(weight, height));
+void BattleState::setBoxSize(float weight, float height, bool ifSmooth){
+    if(ifSmooth){
+        box_.ifSmooth_ = true;
+        box_.targetWeight_ = weight;
+        box_.targetHeight_ = height;
+
+    }
+    else{
+        box_.ifSmooth_ = false;
+        box_.weight_ = weight;
+        box_.height_ = height;
+    }
+}
+
+void BattleState::updateBox(){
+    if(box_.ifSmooth_){
+        //Position
+        box_.x_ += (box_.targetX_ - box_.x_) * box_.SmoothFactor_;
+        box_.y_ += (box_.targetY_ - box_.y_) * box_.SmoothFactor_;
+        box.setPosition(sf::Vector2f(box_.x_, box_.y_));
+
+        //Size
+        box_.weight_ += (box_.targetWeight_ - box_.weight_) * box_.SmoothFactor_;
+        box_.height_ += (box_.targetHeight_ - box_.height_) * box_.SmoothFactor_;
+        box.setSize(sf::Vector2f(box_.weight_, box_.height_));
+    }
+    else{
+        box.setSize(sf::Vector2f(box_.weight_, box_.height_));
+        box.setPosition(sf::Vector2(box_.x_, box_.y_));
+    }
 }
 //draw box
 void BattleState::drawBox(sf::RenderWindow& window){
