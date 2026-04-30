@@ -7,7 +7,9 @@ BattleState::BattleState(AssetManager& assets)
     , sansHeadSprite_(assets.getTexture(Res::sansTexture::SANS_HEAD_IDLE))  // 直接传 texture 构造
     , sansBodySprite_(assets.getTexture(Res::sansTexture::SANS_BODY_IDLE))
     , sansLegSprite_(assets.getTexture(Res::sansTexture::SANS_LEG))
-    , box({0.f, 0.f})
+    , soulSprite_(assets.getTexture(Res::soulTexture::SOUL_))
+    , soulLightSprite_(assets.getTexture(Res::soulTexture::SOUL_LIGHT))
+    , boxSprite_({0.f, 0.f})
 {
     auto headBounds = sansHeadSprite_.getLocalBounds();
     sansHeadSprite_.setOrigin({headBounds.size.x / 2, headBounds.size.y / 1.5f});
@@ -17,10 +19,20 @@ BattleState::BattleState(AssetManager& assets)
     sansBodySprite_.setOrigin({bodyBounds.size.x / 2, bodyBounds.size.y / 1.5f});
     sansBodySprite_.setScale({0.5f, 0.5f});
 
+    //soul
+    auto soulBounds = soulSprite_.getLocalBounds();
+    soulSprite_.setOrigin({soulBounds.size.x / 2, soulBounds.size.y / 2});
+    soulSprite_.setScale({1.0f, 1.0f});
+
+    //soul light 
+    auto soulLightBounds = soulLightSprite_.getLocalBounds();
+    soulLightSprite_.setOrigin({soulLightBounds.size.x / 2, soulLightBounds.size.y / 2});
+    soulLightSprite_.setScale({0.07f, 0.07f});
+
     //box
-    box.setFillColor(sf::Color(0, 0, 0, 0));// 设置填充颜色
-    box.setOutlineColor(sf::Color::White);// 设置边框颜色
-    box.setOutlineThickness(5.f);// 设置边框粗细
+    boxSprite_.setFillColor(sf::Color(0, 0, 0, 0));// 设置填充颜色
+    boxSprite_.setOutlineColor(sf::Color::White);// 设置边框颜色
+    boxSprite_.setOutlineThickness(6.f);// 设置边框粗细
 
 }
 
@@ -35,9 +47,12 @@ void BattleState::enter() {
     }
     music_.play();
 
-    setBoxPosition(30, 220, true);
-    setBoxSize(580, 160, true);
+    setBoxPosition(30, 220);
+    setBoxSize(580, 160);
+
     setSansPosition(320, 200, true);
+
+    setSoulPosition(320, 250);
     
 }
 
@@ -59,6 +74,10 @@ void BattleState::render(sf::RenderWindow& window) {
     drawBox(window);
     drawSoul(window);
 }
+
+
+
+
 
 void BattleState::setSansPosition(float x, float y, bool ifSmooth, float factor) {
 
@@ -107,6 +126,7 @@ void BattleState::drawSans(sf::RenderWindow& window) {
 }
 
 void BattleState::setBoxPosition(float x, float y ,bool ifSmooth) {
+
     if(ifSmooth){
         box_.ifSmooth_ = true;
         box_.targetX_ = x;
@@ -121,11 +141,11 @@ void BattleState::setBoxPosition(float x, float y ,bool ifSmooth) {
 }
 
 void BattleState::setBoxSize(float weight, float height, bool ifSmooth) {
+
     if(ifSmooth){
         box_.ifSmooth_ = true;
         box_.targetWeight_ = weight;
         box_.targetHeight_ = height;
-
     }
     else{
         box_.ifSmooth_ = false;
@@ -135,39 +155,73 @@ void BattleState::setBoxSize(float weight, float height, bool ifSmooth) {
 }
 
 void BattleState::updateBox() {
+    
     if(box_.ifSmooth_){
         //Position
         box_.x_ += (box_.targetX_ - box_.x_) * box_.SmoothFactor_;
         box_.y_ += (box_.targetY_ - box_.y_) * box_.SmoothFactor_;
-        box.setPosition(sf::Vector2f(box_.x_, box_.y_));
+        boxSprite_.setPosition(sf::Vector2f(box_.x_, box_.y_));
 
         //Size
         box_.weight_ += (box_.targetWeight_ - box_.weight_) * box_.SmoothFactor_;
         box_.height_ += (box_.targetHeight_ - box_.height_) * box_.SmoothFactor_;
-        box.setSize(sf::Vector2f(box_.weight_, box_.height_));
+        boxSprite_.setSize(sf::Vector2f(box_.weight_, box_.height_));
     }
     else{
-        box.setSize(sf::Vector2f(box_.weight_, box_.height_));
-        box.setPosition(sf::Vector2(box_.x_, box_.y_));
+        boxSprite_.setSize(sf::Vector2f(box_.weight_, box_.height_));
+        boxSprite_.setPosition(sf::Vector2(box_.x_, box_.y_));
     }
 }
 //draw box
 void BattleState::drawBox(sf::RenderWindow& window) {
-    window.draw(box);
+    window.draw(boxSprite_);
 }
 
 void BattleState::setSoulPosition(float x, float y, bool ifSmooth){
-
+    soul_.x_ = x;
+    soul_.y_ = y;
 }
 
-void BattleState::setSoulSize(float size, bool ifSmooth){
+
+void BattleState::setSoulDir(float dir){
 
 }
 
 void BattleState::updateSoul(){
 
+    float dx = 0, dy = 0;
+
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))    dy -= 1.0f;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down)) dy += 1.0f;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)) dx -= 1.0f;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) dx += 1.0f;
+
+    // 归一化，保持对角线速度和单方向一致
+    float length = std::sqrt(dx * dx + dy * dy);
+    if (length > 0) {
+        soul_.x_ += (dx / length) * soul_.moveSpeed_;
+        soul_.y_ += (dy / length) * soul_.moveSpeed_;
+    }
+
+
+    soulSprite_.setPosition(sf::Vector2(soul_.x_, soul_.y_));
+    soulLightSprite_.setPosition(sf::Vector2(soul_.x_, soul_.y_));
+
+    switch (soul_.Status_){
+    case 0:
+    soulSprite_.setColor(sf::Color(255, 0, 0, 255));//Red
+    soulLightSprite_.setColor(sf::Color(255, 0, 0, 200));
+    break;
+    
+    default:
+    break;
+    }
 }
 
 void BattleState::drawSoul(sf::RenderWindow& window){
 
+    if(soul_.ifDisplay_){
+        window.draw(soulLightSprite_);
+        window.draw(soulSprite_);
+    }
 }

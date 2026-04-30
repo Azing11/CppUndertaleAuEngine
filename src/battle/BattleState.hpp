@@ -23,9 +23,13 @@ private:
     DeformableSprite sansLegSprite_;
     sf::Sprite sansHeadSprite_;
     sf::Sprite sansBodySprite_;
+    
+    //soul
+    sf::Sprite soulLightSprite_;
+    sf::Sprite soulSprite_;
 
     //box
-    sf::RectangleShape box;
+    sf::RectangleShape boxSprite_;
 
     sf::Music music_;
     sf::Clock battleClock;  // 用于计时
@@ -89,8 +93,8 @@ private:
     }box_;
     
     //box
-    void setBoxPosition(float x, float y, bool ifSmooth);
-    void setBoxSize(float weight, float height, bool ifSmooth);
+    void setBoxPosition(float x, float y, bool ifSmooth = true);
+    void setBoxSize(float weight, float height, bool ifSmooth = true);
     void updateBox();
     void drawBox(sf::RenderWindow& window);
 
@@ -101,10 +105,13 @@ private:
         float y_ = 0;
 
         float dir_ = 0;
-        float size_ = 0;
-    };
-    void setSoulPosition(float x, float y, bool ifSmooth);
-    void setSoulSize(float size, bool ifSmooth);
+
+        int Status_ = 0;
+
+        float moveSpeed_ = 2;
+    }soul_;
+    void setSoulPosition(float x, float y, bool ifSmooth = false);
+    void setSoulDir(float dir);
     void updateSoul();
     void drawSoul(sf::RenderWindow& window);
 };

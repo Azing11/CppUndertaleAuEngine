@@ -7,12 +7,26 @@ Game::Game()
 {
     window_.setFramerateLimit(60);
     
-    // 预加载资源（void 函数，不检查返回值）
-    assets_.loadTexture("sans_head_idle", "resources/sprites/Sans/head/sans_head_idle.png");
-    assets_.loadTexture("sans_body_idle", "resources/sprites/Sans/body/sans_body_idle.png");
-    assets_.loadTexture("sans_leg", "resources/sprites/Sans/leg/sans_leg_.png");
+    // 预加载资源
+    {
+        assets_.loadTexture("sans_head_idle", "resources/sprites/Sans/head/sans_head_idle.png");
+        assets_.loadTexture("sans_head_one_eye_closed", "resources/sprites/Sans/head/sans_head_one_eye_closed.png");
 
+        assets_.loadTexture("sans_body_idle", "resources/sprites/Sans/body/sans_body_idle.png");
+
+        assets_.loadTexture("sans_leg", "resources/sprites/Sans/leg/sans_leg_.png");
+    }   //sans
+    //soul
+    {
+        assets_.loadTexture("soul_", "resources/sprites/battle/soul/soul_.png");
+        assets_.loadTexture("soul_light", "resources/sprites/battle/soul/soul_light.png");
+    }
+
+    //music
     assets_.loadSound("music", "resources/audio/music/music.mp3");
+    
+    //sfx
+    //assets_.loadSound();
     
     // 初始状态
     states_.push(std::make_unique<BattleState>(assets_));

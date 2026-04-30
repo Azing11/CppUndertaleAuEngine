@@ -8,6 +8,12 @@ namespace Res
         constexpr auto SANS_LEG = "sans_leg";
     }
 
+    namespace soulTexture
+    {
+        constexpr auto SOUL_ = "soul_";
+        constexpr auto SOUL_LIGHT = "soul_light";
+    }
+    
     namespace Audio {
         constexpr auto BATTLE_MUSIC = "resources/audio/music/music.mp3";
     }
