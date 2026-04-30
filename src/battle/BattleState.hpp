@@ -45,26 +45,26 @@ private:
 
         // 基础位置
         float baseX_ = 0; //320
-        float baseY_ = 200; //160
-        float legBaseX_ = (baseX_ - 43);
-        float legBaseY_ = (baseY_ - 56);
-        float legWidth_ = 90;
-        float legHeight_ = 50;
-
+        float baseY_ = 0; //160
+    
         //腿偏移量
         float legOffsetX_ = -43.0f;
         float legOffsetY_ = -56.0f;
+        float legBaseX_() const { return baseX_ + legOffsetX_; }
+        float legBaseY_() const { return baseY_ + legOffsetY_; }
+        float legWidth_ = 90;
+        float legHeight_ = 50;
 
         //用于平滑移动
-        bool ifSmooth_ = true;
-        float vX_ = 320;
-        float vY_ = 200;
+        bool ifSmooth_ = false;
+        float targetX_ = 320;
+        float targetY_ = 200;
         //平滑速率
         float SmoothFactor_ = 0.1f;  // 1/10
     }sans_; //可以设置多审
 
     //sans
-    void setSansPosition(float x, float y, bool ifSmooth);
+    void setSansPosition(float x, float y, bool ifSmooth, float factor = 0.1f);
     void setSansSwayFactor(float x, float y);
     void updateSansAnimation(float t);
     void drawSans(sf::RenderWindow& window);
@@ -96,7 +96,15 @@ private:
 
     //soul
     struct soulConfig {
+        bool ifDisplay_ = true;
+        float x_ = 0;
+        float y_ = 0;
 
+        float dir_ = 0;
+        float size_ = 0;
     };
     void setSoulPosition(float x, float y, bool ifSmooth);
+    void setSoulSize(float size, bool ifSmooth);
+    void updateSoul();
+    void drawSoul(sf::RenderWindow& window);
 };

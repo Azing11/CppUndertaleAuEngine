@@ -34,6 +34,11 @@ void BattleState::enter() {
         std::cerr << "Fail to load music";
     }
     music_.play();
+
+    setBoxPosition(30, 220, true);
+    setBoxSize(580, 160, true);
+    setSansPosition(320, 200, true);
+    
 }
 
 void BattleState::handleEvent(const sf::Event& event) {
@@ -46,17 +51,29 @@ void BattleState::update(float dt) {
     float t = battleClock.getElapsedTime().asMilliseconds();
     updateSansAnimation(t);
     updateBox();
-    setBoxPosition(30, 220, true);
-    setBoxSize(580, 160, true);
+    updateSoul();
 }
 
 void BattleState::render(sf::RenderWindow& window) { 
     drawSans(window);
     drawBox(window);
+    drawSoul(window);
 }
 
-void BattleState::setSansPosition(float x, float y,  bool ifSmooth) {
-    
+void BattleState::setSansPosition(float x, float y, bool ifSmooth, float factor) {
+
+    if(ifSmooth) {
+        sans_.ifSmooth_ = true;
+        sans_.SmoothFactor_ = factor;
+
+        sans_.targetX_ = x;
+        sans_.targetY_ = y;
+    }
+    else {
+        ifSmooth = false;
+        sans_.baseX_ = x;
+        sans_.baseY_ = y;
+    }
 }
 
 void BattleState::updateSansAnimation(float t) {
@@ -67,8 +84,8 @@ void BattleState::updateSansAnimation(float t) {
 
 
     if(sans_.ifSmooth_){
-    sans_.baseX_ += (sans_.vX_ - sans_.baseX_) * sans_.SmoothFactor_;
-    sans_.baseY_ += (sans_.vY_ - sans_.baseY_) * sans_.SmoothFactor_;
+    sans_.baseX_ += (sans_.targetX_ - sans_.baseX_) * sans_.SmoothFactor_;
+    sans_.baseY_ += (sans_.targetY_ - sans_.baseY_) * sans_.SmoothFactor_;
     }
 }
 
@@ -78,10 +95,10 @@ void BattleState::drawSans(sf::RenderWindow& window) {
     sansHeadSprite_.setPosition(sf::Vector2f(sans_.baseX_ + sans_.swayX_, sans_.baseY_ + sans_.swayY_));
     sansBodySprite_.setPosition(sf::Vector2f(sans_.baseX_ + sans_.swayX_, sans_.baseY_ + sans_.swayY_));
     sansLegSprite_.setCorners(
-        sf::Vector2f((sans_.baseX_ + sans_.legOffsetX_) + sans_.swayX_, (sans_.baseY_ + sans_.legOffsetY_) + sans_.swayY_),           // 左上
-        sf::Vector2f((sans_.baseX_ + sans_.legOffsetX_) + sans_.legWidth_ + sans_.swayX_, (sans_.baseY_ + sans_.legOffsetY_) + sans_.swayY_), // 右上
-        sf::Vector2f((sans_.baseX_ + sans_.legOffsetX_), (sans_.baseY_ + sans_.legOffsetY_) + sans_.legHeight_),                 // 左下（固定）
-        sf::Vector2f((sans_.baseX_ + sans_.legOffsetX_) + sans_.legWidth_, (sans_.baseY_ + sans_.legOffsetY_) + sans_.legHeight_)       // 右下（固定）
+        sf::Vector2f(sans_.legBaseX_() + sans_.swayX_, sans_.legBaseY_() + sans_.swayY_),           // 左上
+        sf::Vector2f(sans_.legBaseX_() + sans_.legWidth_ + sans_.swayX_, sans_.legBaseY_() + sans_.swayY_), // 右上
+        sf::Vector2f(sans_.legBaseX_(), sans_.legBaseY_() + sans_.legHeight_),                 // 左下（固定）
+        sf::Vector2f(sans_.legBaseX_() + sans_.legWidth_, sans_.legBaseY_() + sans_.legHeight_)       // 右下（固定）
     );
 
     sansLegSprite_.draw(window);
@@ -137,4 +154,20 @@ void BattleState::updateBox() {
 //draw box
 void BattleState::drawBox(sf::RenderWindow& window) {
     window.draw(box);
+}
+
+void BattleState::setSoulPosition(float x, float y, bool ifSmooth){
+
+}
+
+void BattleState::setSoulSize(float size, bool ifSmooth){
+
+}
+
+void BattleState::updateSoul(){
+
+}
+
+void BattleState::drawSoul(sf::RenderWindow& window){
+
 }
