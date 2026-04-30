@@ -1,6 +1,5 @@
 //BattleState.cpp
 #include "BattleState.hpp"
-#include <iostream>
 
 // 初始化列表中构造 sprite
 BattleState::BattleState(AssetManager& assets) 
@@ -47,8 +46,8 @@ void BattleState::update(float dt) {
     float t = battleClock.getElapsedTime().asMilliseconds();
     updateSansAnimation(t);
     updateBox();
-    setBoxPosition(20, 230, true);
-    setBoxSize(600, 150, true);
+    setBoxPosition(30, 220, true);
+    setBoxSize(580, 160, true);
 }
 
 void BattleState::render(sf::RenderWindow& window) { 
@@ -56,7 +55,10 @@ void BattleState::render(sf::RenderWindow& window) {
     drawBox(window);
 }
 
-//Sans摇摆
+void BattleState::setSansPosition(float x, float y,  bool ifSmooth) {
+    
+}
+
 void BattleState::updateSansAnimation(float t) {
 
     sans_.time_ = t;
@@ -71,7 +73,7 @@ void BattleState::updateSansAnimation(float t) {
 }
 
 //draw sans
-void BattleState::drawSans(sf::RenderWindow& window){
+void BattleState::drawSans(sf::RenderWindow& window) {
     
     sansHeadSprite_.setPosition(sf::Vector2f(sans_.baseX_ + sans_.swayX_, sans_.baseY_ + sans_.swayY_));
     sansBodySprite_.setPosition(sf::Vector2f(sans_.baseX_ + sans_.swayX_, sans_.baseY_ + sans_.swayY_));
@@ -87,7 +89,7 @@ void BattleState::drawSans(sf::RenderWindow& window){
     window.draw(sansHeadSprite_);
 }
 
-void BattleState::setBoxPosition(float x, float y ,bool ifSmooth){
+void BattleState::setBoxPosition(float x, float y ,bool ifSmooth) {
     if(ifSmooth){
         box_.ifSmooth_ = true;
         box_.targetX_ = x;
@@ -101,7 +103,7 @@ void BattleState::setBoxPosition(float x, float y ,bool ifSmooth){
     }
 }
 
-void BattleState::setBoxSize(float weight, float height, bool ifSmooth){
+void BattleState::setBoxSize(float weight, float height, bool ifSmooth) {
     if(ifSmooth){
         box_.ifSmooth_ = true;
         box_.targetWeight_ = weight;
@@ -115,7 +117,7 @@ void BattleState::setBoxSize(float weight, float height, bool ifSmooth){
     }
 }
 
-void BattleState::updateBox(){
+void BattleState::updateBox() {
     if(box_.ifSmooth_){
         //Position
         box_.x_ += (box_.targetX_ - box_.x_) * box_.SmoothFactor_;
@@ -133,6 +135,6 @@ void BattleState::updateBox(){
     }
 }
 //draw box
-void BattleState::drawBox(sf::RenderWindow& window){
+void BattleState::drawBox(sf::RenderWindow& window) {
     window.draw(box);
 }

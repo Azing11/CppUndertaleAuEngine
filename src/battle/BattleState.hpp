@@ -5,6 +5,7 @@
 #include "core/Resources.hpp"
 #include <SFML/Graphics.hpp>
 #include <cmath>
+#include <iostream>
 
 class BattleState : public State {
 public:
@@ -30,7 +31,7 @@ private:
     sf::Clock battleClock;  // 用于计时
     
 
-    // Sans参数
+    // SansConfig
     struct sansConfig {
         float time_ = 0;
 
@@ -61,10 +62,15 @@ private:
         //平滑速率
         float SmoothFactor_ = 0.1f;  // 1/10
     }sans_; //可以设置多审
-    
+
+    //sans
+    void setSansPosition(float x, float y, bool ifSmooth);
+    void setSansSwayFactor(float x, float y);
+    void updateSansAnimation(float t);
+    void drawSans(sf::RenderWindow& window);
+
     //boxConfig
-    struct boxConfig
-    {
+    struct boxConfig {
         float x_ = 0;
         float y_ = 0;
 
@@ -82,15 +88,15 @@ private:
         float targetHeight_ = 0;
     }box_;
     
-    //辅助函数
-
-    //sans
-    void updateSansAnimation(float t);
-    void drawSans(sf::RenderWindow& window);
-
     //box
     void setBoxPosition(float x, float y, bool ifSmooth);
     void setBoxSize(float weight, float height, bool ifSmooth);
     void updateBox();
     void drawBox(sf::RenderWindow& window);
+
+    //soul
+    struct soulConfig {
+
+    };
+    void setSoulPosition(float x, float y, bool ifSmooth);
 };
