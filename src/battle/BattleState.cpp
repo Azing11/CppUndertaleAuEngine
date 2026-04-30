@@ -86,12 +86,12 @@ void BattleState::enter() {
     }
 
     // 中心 (320, 240)
-    setBoxPosition(320.0f, 310.0f, false);
+    setBoxPosition(320.0f, 320.0f, false);
     setBoxSize(283.0f, 283.0f, 65.0f, 65.0f, false); //左右上下
     //setBoxAngle(45.0f, true);
 
     // Sans 在 Box 上方
-    setSansPosition(320.0f, 310.0f - 65.0f - 40.0f, false);
+    setSansPosition(320.0f, 320.0f - 65.0f - 40.0f, false);
 
     // Soul 在 Box 中心
     setSoulPosition(320.0f, 310.0f, false);
