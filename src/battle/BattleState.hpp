@@ -3,6 +3,7 @@
 #include "core/AssetManager.hpp"
 #include "shader/DeformableSprite.hpp"
 #include "core/Resources.hpp"
+#include "core/baseData.hpp"
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include <algorithm>
@@ -26,11 +27,13 @@ private:
     sf::Sprite soulLightSprite_;
     sf::Sprite soulSprite_;
 
-    DeformableSprite boxFrameSprite_;   // 边框（白色线框）
-    DeformableSprite boxBgSprite_;      // 背景填充（半透明黑）
+    DeformableSprite boxFrameSprite_;   // 边框
+    DeformableSprite boxBgSprite_;      // 背景填充
 
     sf::Music music_;
     sf::Clock battleClock;
+
+    baseData::player frisk;
 
     // ========== 工具函数 ==========
     static sf::Vector2f rotatePoint(float px, float py, float cx, float cy, float angleDeg);

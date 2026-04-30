@@ -79,6 +79,7 @@ BattleState::BattleState(AssetManager& assets)
 // ========== enter ==========
 
 void BattleState::enter() {
+
     battleClock.restart();
 
     if (!music_.openFromFile(Res::Audio::BATTLE_MUSIC)) {
@@ -113,6 +114,8 @@ void BattleState::render(sf::RenderWindow& window) {
     drawBox(window);
     drawSoul(window);
 }
+
+
 
 // ========== Sans ==========
 
