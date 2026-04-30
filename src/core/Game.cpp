@@ -8,6 +8,7 @@ Game::Game()
     window_.setFramerateLimit(60);
     
     // 预加载资源
+
     {
         assets_.loadTexture("sans_head_idle", "resources/sprites/Sans/head/sans_head_idle.png");
         assets_.loadTexture("sans_head_one_eye_closed", "resources/sprites/Sans/head/sans_head_one_eye_closed.png");
@@ -16,11 +17,16 @@ Game::Game()
 
         assets_.loadTexture("sans_leg", "resources/sprites/Sans/leg/sans_leg_.png");
     }   //sans
-    //soul
+
     {
         assets_.loadTexture("soul_", "resources/sprites/battle/soul/soul_.png");
         assets_.loadTexture("soul_light", "resources/sprites/battle/soul/soul_light.png");
-    }
+    }   //soul
+
+    {
+        assets_.loadTexture("ui_pixel", "resources/sprites/battle/ui/pixel.png");
+        assets_.loadTexture("box_background", "resources/sprites/battle/ui/background.png");
+    }   //ui
 
     //music
     assets_.loadSound("music", "resources/audio/music/music.mp3");

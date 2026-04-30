@@ -14,6 +14,12 @@ namespace Res
         constexpr auto SOUL_LIGHT = "soul_light";
     }
     
+    namespace uiTexture
+    {
+        constexpr auto PIXEL = "ui_pixel";
+        constexpr auto BOX_BG = "box_background";
+    }
+    
     namespace Audio {
         constexpr auto BATTLE_MUSIC = "resources/audio/music/music.mp3";
     }

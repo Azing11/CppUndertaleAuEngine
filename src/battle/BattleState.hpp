@@ -20,46 +20,44 @@ public:
 private:
     AssetManager& assets_;
 
-    // Sans 精灵
     DeformableSprite sansLegSprite_;
     sf::Sprite sansHeadSprite_;
     sf::Sprite sansBodySprite_;
-    
-    // Soul
     sf::Sprite soulLightSprite_;
     sf::Sprite soulSprite_;
 
-    // Box
-    sf::RectangleShape boxSprite_;
+    DeformableSprite boxFrameSprite_;   // 边框（白色线框）
+    DeformableSprite boxBgSprite_;      // 背景填充（半透明黑）
 
     sf::Music music_;
     sf::Clock battleClock;
 
-    // ========== Sans 配置 ==========
+    // ========== 工具函数 ==========
+    static sf::Vector2f rotatePoint(float px, float py, float cx, float cy, float angleDeg);
+    static float angleLerp(float a, float b, float t);
+    
+    // 获取 Box 四条边的内侧线（考虑边框厚度）
+    void getInnerEdges(sf::Vector2f& tl, sf::Vector2f& tr, 
+                       sf::Vector2f& bl, sf::Vector2f& br) const;
+    
+    // 点到线段的距离和最近点
+    static float distToSegment(float px, float py, float x1, float y1, float x2, float y2);
+    static sf::Vector2f closestOnSegment(float px, float py, float x1, float y1, float x2, float y2);
+
+    // ========== Sans ==========
     struct SansConfig {
         float time_ = 0;
-
-        float swayX_ = 0;
-        float swayY_ = 0;
-
+        float swayX_ = 0, swayY_ = 0;
         float swayScorpX_ = 2.0f / 1000.0f;
         float swayScorpY_ = 4.0f / 1000.0f;
-        float swayFreqX_ = 4;
-        float swayFreqY_ = 2;
-
-        float baseX_ = 0;
-        float baseY_ = 0;
-
-        float legOffsetX_ = -43.0f;
-        float legOffsetY_ = -56.0f;
+        float swayFreqX_ = 4, swayFreqY_ = 2;
+        float baseX_ = 0, baseY_ = 0;
+        float legOffsetX_ = -43.0f, legOffsetY_ = -56.0f;
         float legBaseX_() const { return baseX_ + legOffsetX_; }
         float legBaseY_() const { return baseY_ + legOffsetY_; }
-        float legWidth_ = 90;
-        float legHeight_ = 50;
-
+        float legWidth_ = 90, legHeight_ = 50;
         bool ifSmooth_ = false;
-        float targetX_ = 320;
-        float targetY_ = 200;
+        float targetX_ = 320, targetY_ = 200;
         float smoothFactor_ = 0.1f;
     } sans_;
 
@@ -67,53 +65,44 @@ private:
     void updateSansAnimation(float t);
     void drawSans(sf::RenderWindow& window);
 
-    // ========== Box 配置 ==========
+    // ========== Box ==========
     struct BoxConfig {
-        float x_ = 0;
-        float y_ = 0;
-
-        float width_ = 0;
-        float height_ = 0;
-
+        float x = 320.0f, y = 310.0f;
+        float left = 283.0f, right = 283.0f, up = 65.0f, down = 65.0f;
+        float angle = 0.0f;
+        float frameThickness = 5.0f;
+        
         bool ifSmooth_ = true;
         float smoothFactor_ = 0.1f;
+        
+        float targetX = 320.0f, targetY = 240.0f;
+        float targetLeft = 65.0f, targetRight = 65.0f;
+        float targetUp = 65.0f, targetDown = 65.0f;
+        float targetAngle = 0.0f;
 
-        float targetX_ = 0;
-        float targetY_ = 0;
-
-        float targetWidth_ = 0;
-        float targetHeight_ = 0;
-
-        // 边界（内部可用区域，已考虑边框厚度）
-        float left = 0;
-        float top = 0;
-        float right = 0;
-        float bottom = 0;
-
-        void updateBounds(float x, float y, float w, float h, float thickness) {
-            left   = x + thickness;
-            top    = y + thickness;
-            right  = x + w - thickness;
-            bottom = y + h - thickness;
-        }
-
-        float innerWidth() const  { return right - left; }
-        float innerHeight() const { return bottom - top; }
+        float width() const  { return left + right; }
+        float height() const { return up + down; }
+        
+        // 相对中心的顶点（未旋转）
+        sf::Vector2f tl() const { return {-left, -up}; }
+        sf::Vector2f tr() const { return { right, -up}; }
+        sf::Vector2f br() const { return { right,  down}; }
+        sf::Vector2f bl() const { return {-left,  down}; }
     } box_;
-    
-    void setBoxPosition(float x, float y, bool ifSmooth = false);
-    void setBoxSize(float width, float height, bool ifSmooth = false);
+
+    void setBoxPosition(float cx, float cy, bool ifSmooth = true);
+    void setBoxSize(float left, float right, float up, float down, bool ifSmooth = true);
+    void setBoxAngle(float angle, bool ifSmooth = true);
     void updateBox();
     void drawBox(sf::RenderWindow& window);
 
-    // ========== Soul 配置 ==========
+    // ========== Soul ==========
     struct SoulConfig {
         bool ifDisplay_ = true;
-        float x_ = 0;
-        float y_ = 0;
+        float x_ = 320.0f, y_ = 240.0f;
         float dir_ = 0;
         int status_ = 0;
-        float moveSpeed_ = 3;
+        float moveSpeed_ = 3.0f;
     } soul_;
 
     void setSoulPosition(float x, float y, bool ifSmooth = false);
