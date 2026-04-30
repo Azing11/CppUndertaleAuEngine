@@ -1,10 +1,8 @@
-//BattleState.cpp
 #include "BattleState.hpp"
 
-// 初始化列表中构造 sprite
 BattleState::BattleState(AssetManager& assets) 
     : assets_(assets)
-    , sansHeadSprite_(assets.getTexture(Res::sansTexture::SANS_HEAD_IDLE))  // 直接传 texture 构造
+    , sansHeadSprite_(assets.getTexture(Res::sansTexture::SANS_HEAD_IDLE))
     , sansBodySprite_(assets.getTexture(Res::sansTexture::SANS_BODY_IDLE))
     , sansLegSprite_(assets.getTexture(Res::sansTexture::SANS_LEG))
     , soulSprite_(assets.getTexture(Res::soulTexture::SOUL_))
@@ -19,48 +17,34 @@ BattleState::BattleState(AssetManager& assets)
     sansBodySprite_.setOrigin({bodyBounds.size.x / 2, bodyBounds.size.y / 1.5f});
     sansBodySprite_.setScale({0.5f, 0.5f});
 
-    //soul
     auto soulBounds = soulSprite_.getLocalBounds();
     soulSprite_.setOrigin({soulBounds.size.x / 2, soulBounds.size.y / 2});
     soulSprite_.setScale({1.0f, 1.0f});
 
-    //soul light 
     auto soulLightBounds = soulLightSprite_.getLocalBounds();
     soulLightSprite_.setOrigin({soulLightBounds.size.x / 2, soulLightBounds.size.y / 2});
     soulLightSprite_.setScale({0.07f, 0.07f});
 
-    //box
-    boxSprite_.setFillColor(sf::Color(0, 0, 0, 0));// 设置填充颜色
-    boxSprite_.setOutlineColor(sf::Color::White);// 设置边框颜色
-    boxSprite_.setOutlineThickness(6.f);// 设置边框粗细
-
+    boxSprite_.setFillColor(sf::Color(0, 0, 0, 0));
+    boxSprite_.setOutlineColor(sf::Color::White);
+    boxSprite_.setOutlineThickness(6.f);
 }
 
 void BattleState::enter() {
-    //std::cout << "Entering battle\n";
     battleClock.restart();
 
-    //加载音乐
-    if(!music_.openFromFile(Res::Audio::BATTLE_MUSIC))
-    {
-        std::cerr << "Fail to load music";
+    if (!music_.openFromFile(Res::Audio::BATTLE_MUSIC)) {
+        std::cerr << "Fail to load music\n";
     }
-    music_.play();
 
-    setBoxPosition(30, 220);
-    setBoxSize(580, 160);
+    setBoxPosition(30, 220, true);
+    setBoxSize(580, 160, true);
 
     setSansPosition(320, 200, true);
-
-    setSoulPosition(320, 250);
-    
+    setSoulPosition(320, 250, false);
 }
 
-void BattleState::handleEvent(const sf::Event& event) {
-
-}
-
-
+void BattleState::handleEvent(const sf::Event& event) {}
 
 void BattleState::update(float dt) {
     float t = battleClock.getElapsedTime().asMilliseconds();
@@ -69,55 +53,50 @@ void BattleState::update(float dt) {
     updateSoul();
 }
 
-void BattleState::render(sf::RenderWindow& window) { 
+void BattleState::render(sf::RenderWindow& window) {
     drawSans(window);
     drawBox(window);
     drawSoul(window);
 }
 
-
-
-
+// ========== Sans ==========
 
 void BattleState::setSansPosition(float x, float y, bool ifSmooth, float factor) {
-
-    if(ifSmooth) {
+    if (ifSmooth) {
         sans_.ifSmooth_ = true;
-        sans_.SmoothFactor_ = factor;
-
+        sans_.smoothFactor_ = factor;
         sans_.targetX_ = x;
         sans_.targetY_ = y;
-    }
-    else {
-        ifSmooth = false;
+    } else {
+        sans_.ifSmooth_ = false;
         sans_.baseX_ = x;
         sans_.baseY_ = y;
     }
 }
 
 void BattleState::updateSansAnimation(float t) {
-
     sans_.time_ = t;
-    sans_.swayX_ = std::sin(sans_.time_ * sans_.swayScorpX_) * sans_.swayFreqX_;   // 水平摆动幅度
-    sans_.swayY_ = std::sin(sans_.time_ * sans_.swayScorpY_) * sans_.swayFreqY_;   // 垂直摆动幅度（频率更高）
+    sans_.swayX_ = std::sin(sans_.time_ * sans_.swayScorpX_) * sans_.swayFreqX_;
+    sans_.swayY_ = std::sin(sans_.time_ * sans_.swayScorpY_) * sans_.swayFreqY_;
 
-
-    if(sans_.ifSmooth_){
-    sans_.baseX_ += (sans_.targetX_ - sans_.baseX_) * sans_.SmoothFactor_;
-    sans_.baseY_ += (sans_.targetY_ - sans_.baseY_) * sans_.SmoothFactor_;
+    if (sans_.ifSmooth_) {
+        sans_.baseX_ += (sans_.targetX_ - sans_.baseX_) * sans_.smoothFactor_;
+        sans_.baseY_ += (sans_.targetY_ - sans_.baseY_) * sans_.smoothFactor_;
     }
 }
 
-//draw sans
 void BattleState::drawSans(sf::RenderWindow& window) {
-    
-    sansHeadSprite_.setPosition(sf::Vector2f(sans_.baseX_ + sans_.swayX_, sans_.baseY_ + sans_.swayY_));
-    sansBodySprite_.setPosition(sf::Vector2f(sans_.baseX_ + sans_.swayX_, sans_.baseY_ + sans_.swayY_));
+    float sx = sans_.baseX_ + sans_.swayX_;
+    float sy = sans_.baseY_ + sans_.swayY_;
+
+    sansHeadSprite_.setPosition({sx, sy});
+    sansBodySprite_.setPosition({sx, sy});
+
     sansLegSprite_.setCorners(
-        sf::Vector2f(sans_.legBaseX_() + sans_.swayX_, sans_.legBaseY_() + sans_.swayY_),           // 左上
-        sf::Vector2f(sans_.legBaseX_() + sans_.legWidth_ + sans_.swayX_, sans_.legBaseY_() + sans_.swayY_), // 右上
-        sf::Vector2f(sans_.legBaseX_(), sans_.legBaseY_() + sans_.legHeight_),                 // 左下（固定）
-        sf::Vector2f(sans_.legBaseX_() + sans_.legWidth_, sans_.legBaseY_() + sans_.legHeight_)       // 右下（固定）
+        {sans_.legBaseX_() + sans_.swayX_, sans_.legBaseY_() + sans_.swayY_},
+        {sans_.legBaseX_() + sans_.legWidth_ + sans_.swayX_, sans_.legBaseY_() + sans_.swayY_},
+        {sans_.legBaseX_(), sans_.legBaseY_() + sans_.legHeight_},
+        {sans_.legBaseX_() + sans_.legWidth_, sans_.legBaseY_() + sans_.legHeight_}
     );
 
     sansLegSprite_.draw(window);
@@ -125,102 +104,109 @@ void BattleState::drawSans(sf::RenderWindow& window) {
     window.draw(sansHeadSprite_);
 }
 
-void BattleState::setBoxPosition(float x, float y ,bool ifSmooth) {
+// ========== Box ==========
 
-    if(ifSmooth){
+void BattleState::setBoxPosition(float x, float y, bool ifSmooth) {
+    if (ifSmooth) {
         box_.ifSmooth_ = true;
         box_.targetX_ = x;
         box_.targetY_ = y;
-
-    }
-    else{
+    } else {
         box_.ifSmooth_ = false;
         box_.x_ = x;
         box_.y_ = y;
     }
 }
 
-void BattleState::setBoxSize(float weight, float height, bool ifSmooth) {
-
-    if(ifSmooth){
+void BattleState::setBoxSize(float width, float height, bool ifSmooth) {
+    if (ifSmooth) {
         box_.ifSmooth_ = true;
-        box_.targetWeight_ = weight;
+        box_.targetWidth_ = width;
         box_.targetHeight_ = height;
-    }
-    else{
+    } else {
         box_.ifSmooth_ = false;
-        box_.weight_ = weight;
+        box_.width_ = width;
         box_.height_ = height;
     }
 }
 
 void BattleState::updateBox() {
-    
-    if(box_.ifSmooth_){
-        //Position
-        box_.x_ += (box_.targetX_ - box_.x_) * box_.SmoothFactor_;
-        box_.y_ += (box_.targetY_ - box_.y_) * box_.SmoothFactor_;
-        boxSprite_.setPosition(sf::Vector2f(box_.x_, box_.y_));
-
-        //Size
-        box_.weight_ += (box_.targetWeight_ - box_.weight_) * box_.SmoothFactor_;
-        box_.height_ += (box_.targetHeight_ - box_.height_) * box_.SmoothFactor_;
-        boxSprite_.setSize(sf::Vector2f(box_.weight_, box_.height_));
+    if (box_.ifSmooth_) {
+        box_.x_ += (box_.targetX_ - box_.x_) * box_.smoothFactor_;
+        box_.y_ += (box_.targetY_ - box_.y_) * box_.smoothFactor_;
+        box_.width_  += (box_.targetWidth_  - box_.width_)  * box_.smoothFactor_;
+        box_.height_ += (box_.targetHeight_ - box_.height_) * box_.smoothFactor_;
     }
     else{
-        boxSprite_.setSize(sf::Vector2f(box_.weight_, box_.height_));
-        boxSprite_.setPosition(sf::Vector2(box_.x_, box_.y_));
+
     }
+    boxSprite_.setPosition(sf::Vector2f(box_.x_, box_.y_));
+    boxSprite_.setSize(sf::Vector2f(box_.width_, box_.height_));
+    // 更新边界
+    box_.updateBounds(box_.x_, box_.y_, box_.width_, box_.height_, boxSprite_.getOutlineThickness());
 }
-//draw box
+
 void BattleState::drawBox(sf::RenderWindow& window) {
     window.draw(boxSprite_);
 }
 
-void BattleState::setSoulPosition(float x, float y, bool ifSmooth){
+// ========== Soul ==========
+
+void BattleState::setSoulPosition(float x, float y, bool ifSmooth) {
     soul_.x_ = x;
     soul_.y_ = y;
 }
 
-
-void BattleState::setSoulDir(float dir){
-
+void BattleState::setSoulDir(float dir) {
+    soul_.dir_ = dir;
 }
 
-void BattleState::updateSoul(){
-
+void BattleState::updateSoul() {
     float dx = 0, dy = 0;
 
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))    dy -= 1.0f;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down)) dy += 1.0f;
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)) dx -= 1.0f;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))  dy += 1.0f;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))  dx -= 1.0f;
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) dx += 1.0f;
 
-    // 归一化，保持对角线速度和单方向一致
     float length = std::sqrt(dx * dx + dy * dy);
     if (length > 0) {
         soul_.x_ += (dx / length) * soul_.moveSpeed_;
         soul_.y_ += (dy / length) * soul_.moveSpeed_;
     }
 
+    // 使用 BoxConfig 中预计算的边界
+    auto soulBounds = soulSprite_.getLocalBounds();
+    float soulHalfW = (soulBounds.size.x * soulSprite_.getScale().x) / 2.0f;
+    float soulHalfH = (soulBounds.size.y * soulSprite_.getScale().y) / 2.0f;
 
-    soulSprite_.setPosition(sf::Vector2(soul_.x_, soul_.y_));
-    soulLightSprite_.setPosition(sf::Vector2(soul_.x_, soul_.y_));
+    float minX = box_.left + soulHalfW;
+    float maxX = box_.right - soulHalfW;
+    float minY = box_.top + soulHalfH;
+    float maxY = box_.bottom - soulHalfH;
 
-    switch (soul_.Status_){
-    case 0:
-    soulSprite_.setColor(sf::Color(255, 0, 0, 255));//Red
-    soulLightSprite_.setColor(sf::Color(255, 0, 0, 200));
-    break;
-    
-    default:
-    break;
+    // 防止 Box 太小时崩溃
+    if (maxX < minX) maxX = minX;
+    if (maxY < minY) maxY = minY;
+
+    soul_.x_ = std::max(minX, std::min(soul_.x_, maxX));
+    soul_.y_ = std::max(minY, std::min(soul_.y_, maxY));
+
+    soulSprite_.setPosition({soul_.x_, soul_.y_});
+    soulLightSprite_.setPosition({soul_.x_, soul_.y_});
+
+    switch (soul_.status_) {
+        case 0: //Red
+            soulSprite_.setColor(sf::Color(255, 0, 0, 255));
+            soulLightSprite_.setColor(sf::Color(255, 0, 0, 200));
+            break;
+        default:
+            break;
     }
 }
 
-void BattleState::drawSoul(sf::RenderWindow& window){
-
-    if(soul_.ifDisplay_){
+void BattleState::drawSoul(sf::RenderWindow& window) {
+    if (soul_.ifDisplay_) {
         window.draw(soulLightSprite_);
         window.draw(soulSprite_);
     }
