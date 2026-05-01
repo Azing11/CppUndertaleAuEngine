@@ -67,7 +67,7 @@ BattleState::BattleState(AssetManager& assets)
 
     auto soulLightBounds = soulLightSprite_.getLocalBounds();
     soulLightSprite_.setOrigin({soulLightBounds.size.x / 2, soulLightBounds.size.y / 2});
-    soulLightSprite_.setScale({0.07f, 0.07f});
+    soulLightSprite_.setScale({0.05f, 0.05f});
 
     // Box 边框 - 白色，只画线框（通过顶点控制）
     boxFrameSprite_.setColor(sf::Color::White);
@@ -76,7 +76,6 @@ BattleState::BattleState(AssetManager& assets)
     boxBgSprite_.setColor(sf::Color(255, 255, 255, 200));
 }
 
-// ========== enter ==========
 
 void BattleState::enter() {
 
@@ -296,7 +295,15 @@ void BattleState::setSoulDir(float dir) {
 }
 
 void BattleState::updateSoul() {
-    //移动
+   
+    //碰撞
+    auto soulBounds = soulSprite_.getLocalBounds();
+    float soulRadius = std::max(
+        (soulBounds.size.x * soulSprite_.getScale().x) / 2.0f,
+        (soulBounds.size.y * soulSprite_.getScale().y) / 2.0f
+    );
+
+     //移动
     {
         float dx = 0, dy = 0;
 
@@ -308,12 +315,6 @@ void BattleState::updateSoul() {
         // 预检测边界，清零被阻挡方向的输入
         sf::Vector2f tl, tr, bl, br;
         getInnerEdges(tl, tr, bl, br);
-
-        auto soulBounds = soulSprite_.getLocalBounds();
-        float soulRadius = std::max(
-            (soulBounds.size.x * soulSprite_.getScale().x) / 2.0f,
-            (soulBounds.size.y * soulSprite_.getScale().y) / 2.0f
-        );
 
         float dTop    = distToSegment(soul_.x_, soul_.y_, tl.x, tl.y, tr.x, tr.y);
         float dBottom = distToSegment(soul_.x_, soul_.y_, br.x, br.y, bl.x, bl.y);
@@ -343,7 +344,7 @@ void BattleState::updateSoul() {
         // 预阻挡：如果移动方向有向外的分量，清零
         if (dTop < margin && dy < 0) {
             // 检查 ↑ 是否真的有向外的分量
-            if (nTopY < -0.5f) dy = 0;  // 上边法线朝上，↑ 是向外
+            if (nTopY < -0.5f) dy = -1;  // 上边法线朝上，↑ 是向外
         }
         if (dBottom < margin && dy > 0) {
             if (nBottomY > 0.5f) dy = 0;
@@ -390,9 +391,9 @@ void BattleState::updateSoul() {
         addPush(dRight, tr, br, nRightX, nRightY);
 
         if (pushCount > 0) {
-            // 平均推回量（防止多条边叠加过度）
-            soul_.x_ += pushX / pushCount;
-            soul_.y_ += pushY / pushCount;
+            // 平均推回量
+            soul_.x_ += pushX ;
+            soul_.y_ += pushY ;
         }
 
         soulSprite_.setPosition({soul_.x_, soul_.y_});
