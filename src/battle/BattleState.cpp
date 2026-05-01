@@ -81,7 +81,7 @@ BattleState::BattleState(AssetManager& assets)
 void BattleState::enter() {
 
     battleClock.restart();
-    
+
     if (!music_.openFromFile(Res::audio::BATTLE_MUSIC)) { std::cerr << "Fail to load music\n"; }
 
     // 中心 (320, 240)
@@ -541,6 +541,8 @@ void BattleState::updateSoul() {
         }
     }
     
+
+    // 绘制颜色
     switch (soul_.status_) {
         case 0:
             soulSprite_.setColor(sf::Color(255, 0, 0, 255));
