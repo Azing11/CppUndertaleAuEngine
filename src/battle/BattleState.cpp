@@ -235,7 +235,7 @@ void BattleState::updateBox() {
     sf::Vector2f obl = rotatePoint(box_.x + box_.bl().x, box_.y + box_.bl().y, box_.x, box_.y, box_.angle);
 
     // 内框顶点（减去边框厚度）
-    float ft = box_.frameThickness;
+    float ft = -box_.frameThickness;
     sf::Vector2f itl = rotatePoint(box_.x + box_.tl().x + ft, box_.y + box_.tl().y + ft, box_.x, box_.y, box_.angle);
     sf::Vector2f itr = rotatePoint(box_.x + box_.tr().x - ft, box_.y + box_.tr().y + ft, box_.x, box_.y, box_.angle);
     sf::Vector2f ibr = rotatePoint(box_.x + box_.br().x - ft, box_.y + box_.br().y - ft, box_.x, box_.y, box_.angle);
