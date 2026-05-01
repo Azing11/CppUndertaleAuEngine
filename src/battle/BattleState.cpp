@@ -113,8 +113,8 @@ void BattleState::enter() {
     setBoxPosition(320.0f, 320.0f, false);
     setBoxSize(283.0f, 283.0f, 65.0f, 65.0f, false); //左右上下
     
-    //setBoxAngle(90.0f, true);
-    //setBoxSize(65.0f, 65.0f, 65.0f, 65.0f, true);
+    setBoxAngle(90.0f, true);
+    setBoxSize(65.0f, 65.0f, 65.0f, 65.0f, true);
 
     // Sans
     setSansPosition(320.0f, 320.0f - 65.0f - 40.0f, false);
@@ -646,3 +646,5 @@ void BattleState::drawStatusBar(sf::RenderWindow& window){
     window.draw(currentHpRect);
     window.draw(krSprite_);
 }
+
+// ======== Button ========

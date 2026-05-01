@@ -121,9 +121,9 @@ private:
         bool rotationIfSmooth = false;
         float rotationSmoothFactor = 0.1f;
 
-        int status_ = 1;
+        int status_ = 0;
 
-        float moveSpeed_ = 3.0f;
+        float moveSpeed_ = 2.0f;
         float velocity_ = 0;
         float horizSpeed_ = 0.0f;   // 垂直于重力方向的速度
         float jumpSpeed_ = 4.0f;    // 起跳初速度（起跳范围）
@@ -148,4 +148,7 @@ private:
     void initStatusBar();
     void updateStatusBar();
     void drawStatusBar(sf::RenderWindow& window);
+
+    //button
+
 };
