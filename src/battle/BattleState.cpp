@@ -43,6 +43,7 @@ sf::Vector2f BattleState::closestOnSegment(float px, float py, float x1, float y
 
 BattleState::BattleState(AssetManager& assets) 
     : assets_(assets)
+    , background_(assets_.getTexture(Res::uiTexture::BACKGROUND))
     , sansHeadSprite_(assets.getTexture(Res::sansTexture::SANS_HEAD_IDLE))
     , sansBodySprite_(assets.getTexture(Res::sansTexture::SANS_BODY_IDLE))
     , sansLegSprite_(assets.getTexture(Res::sansTexture::SANS_LEG))
@@ -52,6 +53,13 @@ BattleState::BattleState(AssetManager& assets)
     , boxBgSprite_(assets.getTexture(Res::uiTexture::BOX_BG))    
     , sfx_dong_(assets_.getSound(Res::sfx::SFX_DONG))
 {
+    //背景
+    auto bg = background_.getLocalBounds();
+    background_.setOrigin({bg.size.x / 2, bg.size.y / 2});
+    background_.setScale({1.0f, 0.5f});
+    background_.setColor(sf::Color::White);
+    background_.setPosition(sf::Vector2f(320.0f, 240.0f));
+
     // Sans
     auto headBounds = sansHeadSprite_.getLocalBounds();
     sansHeadSprite_.setOrigin({headBounds.size.x / 2, headBounds.size.y / 1.5f});
@@ -87,7 +95,7 @@ void BattleState::enter() {
     setBoxPosition(320.0f, 320.0f, false);
     setBoxSize(283.0f, 283.0f, 65.0f, 65.0f, false); //左右上下
     
-    //setBoxAngle(45.0f, true);
+    //setBoxAngle(90.0f, true);
     //setBoxSize(65.0f, 65.0f, 65.0f, 65.0f, true);
 
     // Sans
@@ -95,7 +103,7 @@ void BattleState::enter() {
 
     // Soul
     setSoulPosition(320.0f, 310.0f, false);
-    setSoulDir(90.0f);
+    setSoulDir(0.0f);
 }
 
 void BattleState::handleEvent(const sf::Event& event) {}
@@ -108,6 +116,7 @@ void BattleState::update(float dt) {
 }
 
 void BattleState::render(sf::RenderWindow& window) {
+    window.draw(background_);
     drawSans(window);
     drawBox(window);
     drawSoul(window);

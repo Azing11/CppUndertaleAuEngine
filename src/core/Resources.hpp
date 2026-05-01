@@ -17,6 +17,7 @@ namespace Res
     namespace uiTexture
     {
         constexpr auto PIXEL = "ui_pixel";
+        constexpr auto BACKGROUND = "battle_background";
         constexpr auto BOX_BG = "box_background";
     }
     

@@ -26,7 +26,8 @@ Game::Game()
             //=========ui=========
         {
             assets_.loadTexture("ui_pixel", "resources/sprites/battle/ui/pixel.png");
-            assets_.loadTexture("box_background", "resources/sprites/battle/ui/background.png");
+            assets_.loadTexture("battle_background", "resources/sprites/battle/ui/background.png");
+            assets_.loadTexture("box_background", "resources/sprites/battle/ui/box_background.png");
         }   
             //=========font=========
         {

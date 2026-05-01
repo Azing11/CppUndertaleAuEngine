@@ -21,6 +21,7 @@ public:
 private:
     AssetManager& assets_;
 
+    sf::Sprite background_;
     DeformableSprite sansLegSprite_;
     sf::Sprite sansHeadSprite_;
     sf::Sprite sansBodySprite_;
@@ -56,7 +57,7 @@ private:
         float swayScorpY_ = 4.0f / 1000.0f;
         float swayFreqX_ = 4, swayFreqY_ = 2;
         float baseX_ = 0, baseY_ = 0;
-        float legOffsetX_ = -43.0f, legOffsetY_ = -56.0f;
+        float legOffsetX_ = -43.0f, legOffsetY_ = -57.0f;
         float legBaseX_() const { return baseX_ + legOffsetX_; }
         float legBaseY_() const { return baseY_ + legOffsetY_; }
         float legWidth_ = 90, legHeight_ = 50;
