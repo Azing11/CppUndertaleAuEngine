@@ -52,6 +52,11 @@ BattleState::BattleState(AssetManager& assets)
     , boxFrameSprite_(assets.getTexture(Res::uiTexture::PIXEL))   // 1x1 白色像素
     , boxBgSprite_(assets.getTexture(Res::uiTexture::BOX_BG))    
     , sfx_dong_(assets_.getSound(Res::sfx::SFX_DONG))
+    , menu_font_(assets_.getFont(Res::fonts::MENU_FONT))
+    , sans_font_(assets_.getFont(Res::fonts::SANS_FONT))
+    , text_(assets_.getFont(Res::fonts::STATUS_BAR))
+    , krSprite_(assets_.getTexture(Res::uiTexture::KR))
+    , hpSprite_(assets_.getTexture(Res::uiTexture::HP))
 {
     //背景
     auto bg = background_.getLocalBounds();
@@ -83,12 +88,25 @@ BattleState::BattleState(AssetManager& assets)
 
     // Box 背景
     boxBgSprite_.setColor(sf::Color(255, 255, 255, 200));
+    
+    auto maxHpRectBounds = maxHpRect.getLocalBounds();
+    maxHpRect.setOrigin({maxHpRectBounds.size.x / 2, maxHpRectBounds.size.y / 2});
+    maxHpRect.setPosition({260, 397});
+    maxHpRect.setFillColor(sf::Color::Red);
+    maxHpRect.setSize(sf::Vector2f(1.0f, 1.0f));
+
+    auto currentHpRectBounds = currentHpRect.getLocalBounds();
+    currentHpRect.setOrigin({currentHpRectBounds.size.x / 2, currentHpRectBounds.size.y / 2});
+    currentHpRect.setPosition({260, 397});
+    currentHpRect.setFillColor(sf::Color::Yellow);
+    currentHpRect.setSize(sf::Vector2f(1.0f, 1.0f));
 }
 
 void BattleState::enter() {
 
     battleClock.restart();
 
+    initStatusBar();
     if (!music_.openFromFile(Res::audio::BATTLE_MUSIC)) { std::cerr << "Fail to load music\n"; }
 
     // 中心 (320, 240)
@@ -113,6 +131,7 @@ void BattleState::update(float dt) {
     updateSansAnimation(t);
     updateBox();
     updateSoul();
+    updateStatusBar();
 }
 
 void BattleState::render(sf::RenderWindow& window) {
@@ -120,6 +139,7 @@ void BattleState::render(sf::RenderWindow& window) {
     drawSans(window);
     drawBox(window);
     drawSoul(window);
+    drawStatusBar(window);
 }
 
 
@@ -583,4 +603,46 @@ void BattleState::drawSoul(sf::RenderWindow& window) {
         window.draw(soulLightSprite_);
         window.draw(soulSprite_);
     }
+}
+
+// ======== StatusBar ========
+
+void BattleState::initStatusBar(){
+    frisk_.setName("FRISK");
+    frisk_.setLv(1);
+
+    text_.setCharacterSize(26);
+    text_.setFillColor(sf::Color::White);
+    text_.setPosition({35, 390});
+    text_.setLineSpacing(1.0f);
+    auto pos = text_.getPosition();
+    text_.setPosition({std::round(pos.x), std::round(pos.y)});
+
+    hpSprite_.setPosition({220, 402});
+    hpSprite_.setColor(sf::Color::White);
+    hpSprite_.setScale(sf::Vector2f(1.2f, 1.2f));
+
+    
+    krSprite_.setColor(sf::Color::White);
+    krSprite_.setScale(sf::Vector2f(1.2f, 1.2f));
+
+    frisk_.setCurrentHp(frisk_.getMaxHp());
+    maxHpRect.setScale(sf::Vector2f(1.2f * frisk_.getMaxHp(), 20.0f));
+}
+
+void BattleState::updateStatusBar(){
+    status_bar_vHp += (frisk_.getCurrentHp() - status_bar_vHp) * status_bar_smooth_factor;
+    currentHpRect.setScale(sf::Vector2f(1.2f * status_bar_vHp, 20.0f));
+
+    krSprite_.setPosition({270 + frisk_.getMaxHp() * 1.2f, 402});
+    std::string displayText = frisk_.getName() + "  LV " + std::to_string(frisk_.getLv()) + spaces(frisk_.getLv()/3 + 15) + std::to_string(frisk_.getCurrentHp()) + " / " +std::to_string(frisk_.getMaxHp());
+    text_.setString(displayText);
+}
+
+void BattleState::drawStatusBar(sf::RenderWindow& window){
+    window.draw(text_);
+    window.draw(hpSprite_);
+    window.draw(maxHpRect);
+    window.draw(currentHpRect);
+    window.draw(krSprite_);
 }

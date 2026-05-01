@@ -5,7 +5,7 @@ namespace baseData
 {
     struct player
     {
-        std::string name = "frisk";
+        std::string name = "";
         
         int lv = 1;
         int currentHp = 0;
@@ -16,7 +16,7 @@ namespace baseData
         
         std::string getName(){ return name; }
         int getLv(){ return lv; }
-        int getTopHp(){ return 16 + (4 * lv); }
+        int getMaxHp(){ return 16 + (4 * lv); }
         int getCurrentHp(){ return currentHp; }
 
     };

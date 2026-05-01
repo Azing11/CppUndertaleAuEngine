@@ -7,6 +7,7 @@
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include <algorithm>
+#include <string>
 #include <iostream>
 
 class BattleState : public State {
@@ -27,12 +28,19 @@ private:
     sf::Sprite sansBodySprite_;
     sf::Sprite soulLightSprite_;
     sf::Sprite soulSprite_;
+    sf::Sprite hpSprite_;
+    sf::Sprite krSprite_;
 
     DeformableSprite boxFrameSprite_;   // 边框
     DeformableSprite boxBgSprite_;      // 背景填充
 
+    sf::RectangleShape maxHpRect;
+    sf::RectangleShape currentHpRect;
+
     sf::Music music_;
     sf::Sound sfx_dong_;
+    sf::Font menu_font_;
+    sf::Font sans_font_;
     sf::Clock battleClock;
 
     baseData::player frisk;
@@ -129,4 +137,15 @@ private:
     void setSoulDir(float dir, bool ifSmooth = true, float factor = 0.5f);
     void updateSoul();
     void drawSoul(sf::RenderWindow& window);
+
+    //statusBar
+    baseData::player frisk_;
+    sf::Text text_;
+    sf::RenderTexture rt;
+    float status_bar_smooth_factor = 0.1f;
+    float status_bar_vHp = 0;//实现平滑动画
+    std::string spaces(int n) { return std::string(std::max(0, n), ' '); }
+    void initStatusBar();
+    void updateStatusBar();
+    void drawStatusBar(sf::RenderWindow& window);
 };

@@ -25,13 +25,17 @@ Game::Game()
         }   
             //=========ui=========
         {
+            assets_.loadTexture("kr", "resources/sprites/battle/ui/ui_kr.png");
+            assets_.loadTexture("hp", "resources/sprites/battle/ui/ui_hp.png");
             assets_.loadTexture("ui_pixel", "resources/sprites/battle/ui/pixel.png");
             assets_.loadTexture("battle_background", "resources/sprites/battle/ui/background.png");
             assets_.loadTexture("box_background", "resources/sprites/battle/ui/box_background.png");
         }   
             //=========font=========
         {
-
+            assets_.loadFont("status_bar_font", "resources/fonts/mars_needs_cunnilingus.ttf");
+            assets_.loadFont("menu_font", "resources/fonts/menu.otf");
+            assets_.loadFont("sans_font", "resources/fonts/sans.ttf");
         }  
             //======sfx======
         {

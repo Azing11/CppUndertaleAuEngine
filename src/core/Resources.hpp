@@ -16,6 +16,8 @@ namespace Res
     
     namespace uiTexture
     {
+        constexpr auto KR = "kr";
+        constexpr auto HP = "hp";
         constexpr auto PIXEL = "ui_pixel";
         constexpr auto BACKGROUND = "battle_background";
         constexpr auto BOX_BG = "box_background";
@@ -30,4 +32,12 @@ namespace Res
     {
         constexpr auto SFX_DONG = "sfx_dong";
     }
+    
+    namespace fonts
+    {
+        constexpr auto STATUS_BAR = "status_bar_font";
+        constexpr auto SANS_FONT = "sans_font";
+        constexpr auto MENU_FONT = "menu_font";
+    }
+    
 }

@@ -21,6 +21,7 @@ bool AssetManager::loadFont(const std::string& id, const std::string& path) {
         std::cerr << "[AssetManager] Failed to load font: " << path << std::endl;
         return false;
     }
+    font.setSmooth(false);
     fonts_[id] = std::move(font);
     return true;
 }
