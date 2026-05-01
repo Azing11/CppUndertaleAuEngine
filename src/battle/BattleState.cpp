@@ -50,6 +50,7 @@ BattleState::BattleState(AssetManager& assets)
     , soulLightSprite_(assets.getTexture(Res::soulTexture::SOUL_LIGHT))
     , boxFrameSprite_(assets.getTexture(Res::uiTexture::PIXEL))   // 1x1 白色像素
     , boxBgSprite_(assets.getTexture(Res::uiTexture::BOX_BG))    
+    , sfx_dong_(assets_.getSound(Res::sfx::SFX_DONG))
 {
     // Sans
     auto headBounds = sansHeadSprite_.getLocalBounds();
@@ -80,10 +81,8 @@ BattleState::BattleState(AssetManager& assets)
 void BattleState::enter() {
 
     battleClock.restart();
-
-    if (!music_.openFromFile(Res::Audio::BATTLE_MUSIC)) {
-        std::cerr << "Fail to load music\n";
-    }
+    
+    if (!music_.openFromFile(Res::audio::BATTLE_MUSIC)) { std::cerr << "Fail to load music\n"; }
 
     // 中心 (320, 240)
     setBoxPosition(320.0f, 320.0f, false);
@@ -97,6 +96,7 @@ void BattleState::enter() {
 
     // Soul
     setSoulPosition(320.0f, 310.0f, false);
+    setSoulDir(90.0f);
 }
 
 void BattleState::handleEvent(const sf::Event& event) {}
@@ -290,20 +290,28 @@ void BattleState::setSoulPosition(float x, float y, bool ifSmooth) {
     soul_.y_ = y;
 }
 
-void BattleState::setSoulDir(float dir) {
-    soul_.dir_ = dir;
+void BattleState::setSoulDir(float dir, bool ifSmooth, float factor) {
+    if (ifSmooth){
+        soul_.rotationIfSmooth = true;
+        soul_.rotationSmoothFactor = factor;
+        soul_.targetDit_ = dir;
+    }
+    else{
+        soul_.rotationIfSmooth = false;
+        soul_.dir_ = dir;
+    }
 }
 
 void BattleState::updateSoul() {
    
-    //碰撞
+    // 碰撞
     auto soulBounds = soulSprite_.getLocalBounds();
     float soulRadius = std::max(
         (soulBounds.size.x * soulSprite_.getScale().x) / 2.0f,
         (soulBounds.size.y * soulSprite_.getScale().y) / 2.0f
     );
 
-     //移动
+    // 移动处理
     {
         float dx = 0, dy = 0;
 
@@ -329,46 +337,179 @@ void BattleState::updateSoul() {
             float ny = (b.x - a.x);
             float len = std::sqrt(nx * nx + ny * ny);
             if (len > 0) { nx /= len; ny /= len; }
-            // 确保朝内
             float midX = (a.x + b.x) / 2, midY = (a.y + b.y) / 2;
             float toCenterX = box_.x - midX, toCenterY = box_.y - midY;
             if (nx * toCenterX + ny * toCenterY < 0) { nx = -nx; ny = -ny; }
             return std::make_pair(nx, ny);
         };
 
-        auto [nTopX, nTopY]     = getNormal(tl, tr);
-        auto [nBottomX, nBottomY] = getNormal(br, bl);  // 注意顶点顺序
-        auto [nLeftX, nLeftY]   = getNormal(bl, tl);
-        auto [nRightX, nRightY] = getNormal(tr, br);
+        auto [nTopX, nTopY]       = getNormal(tl, tr);
+        auto [nBottomX, nBottomY] = getNormal(br, bl);
+        auto [nLeftX, nLeftY]     = getNormal(bl, tl);
+        auto [nRightX, nRightY]   = getNormal(tr, br);
 
-        // 预阻挡：如果移动方向有向外的分量，清零
-        if (dTop < margin && dy < 0) {
-            // 检查 ↑ 是否真的有向外的分量
-            if (nTopY < -0.5f) dy = -1;  // 上边法线朝上，↑ 是向外
-        }
-        if (dBottom < margin && dy > 0) {
-            if (nBottomY > 0.5f) dy = 0;
-        }
-        if (dLeft < margin && dx < 0) {
-            if (nLeftX < -0.5f) dx = 0;
-        }
-        if (dRight < margin && dx > 0) {
-            if (nRightX > 0.5f) dx = 0;
+        // ========== 地面检测（基于重力方向） ==========
+        float gravRad = soul_.dir_ * PI / 180.0f;
+        float gravX = std::sin(gravRad);
+        float gravY = std::cos(gravRad);
+        float groundNX = -gravX;
+        float groundNY = -gravY;
+
+        struct EdgeInfo {
+            float dist;
+            float nX, nY;
+        };
+        EdgeInfo edges[4] = {
+            {dTop,    nTopX,    nTopY},
+            {dBottom, nBottomX, nBottomY},
+            {dLeft,   nLeftX,   nLeftY},
+            {dRight,  nRightX,  nRightY}
+        };
+
+        float maxDot = -2.0f;
+        int groundEdgeIdx = -1;
+        for (int i = 0; i < 4; ++i) {
+            float dot = edges[i].nX * groundNX + edges[i].nY * groundNY;
+            if (dot > maxDot) {
+                maxDot = dot;
+                groundEdgeIdx = i;
+            }
         }
 
-        // 移动
+        bool onGround = (groundEdgeIdx >= 0) 
+                     && (edges[groundEdgeIdx].dist < margin) 
+                     && (maxDot > 0.7f);
+
+        // ========== 预阻挡 ==========
+        switch (soul_.status_)
+        {
+        case 0:
+            if (dTop < margin && dy < 0) {
+                if (nTopY < -0.1f) dy = 0;
+            }
+            if (dBottom < margin && dy > 0) {
+                if (nBottomY > 0.1f) dy = 0;
+            }
+            if (dLeft < margin && dx < 0) {
+                if (nLeftX < -0.1f) dx = 0;
+            }
+            if (dRight < margin && dx > 0) {
+                if (nRightX > 0.1f) dx = 0;
+            }
+            break;
+
+        case 1:
+            // case 1 的键盘预阻挡：只阻挡与重力方向垂直的移动（左右）
+            // 上下键用于跳跃/下落控制，不预阻挡
+            if (dLeft < margin && dx < 0) {
+                if (nLeftX < -0.1f) dx = 0;
+            }
+            if (dRight < margin && dx > 0) {
+                if (nRightX > 0.1f) dx = 0;
+            }
+            break;
+
+        default:
+            break;
+        }
+
+        // ========== 移动 ==========
         float length = std::sqrt(dx * dx + dy * dy);
-        if (length > 0) {
-            soul_.x_ += (dx / length) * soul_.moveSpeed_;
-            soul_.y_ += (dy / length) * soul_.moveSpeed_;
+        
+        switch (soul_.status_)
+        {
+        case 0:// 红心模式
+
+            if (length > 0) {
+                soul_.x_ += (dx / length) * soul_.moveSpeed_;
+                soul_.y_ += (dy / length) * soul_.moveSpeed_;
+            }
+            break;
+
+        case 1: {// ========== 重力模式 ==========
+            
+            
+            // ---- 水平移动（垂直于重力方向）----
+            float perpX = -gravY;
+            float perpY = gravX;
+            
+            float moveInput = dx * perpX + dy * perpY;
+            
+            float targetHorizSpeed = moveInput * soul_.moveSpeed_;
+            float horizAccel = onGround ? 0.3f : 0.15f;
+            soul_.horizSpeed_ += (targetHorizSpeed - soul_.horizSpeed_) * horizAccel;
+            
+            soul_.x_ += soul_.horizSpeed_ * perpX;
+            soul_.y_ += soul_.horizSpeed_ * perpY;
+
+            // ---- 跳跃触发 ----
+            float jumpInput = -(dx * gravX + dy * gravY);  // 沿重力反方向的输入
+            
+            // 检测跳跃键是否刚刚按下
+            bool jumpPressed = jumpInput > 0.5f;
+            bool jumpJustPressed = jumpPressed && !soul_.wasJumpPressed_;
+            
+            if (onGround && jumpJustPressed) {
+                // 起跳，给向上的初速度
+                soul_.velocity_ = -soul_.jumpSpeed_;
+                soul_.isJumping_ = true;  // 标记正在跳跃中
+            }
+            
+            soul_.wasJumpPressed_ = jumpPressed;  // 记录本次状态
+
+            // ---- 松开跳跃键 ----
+            if (soul_.isJumping_ && !jumpPressed && soul_.velocity_ < 0) {
+                // velocity_ < 0 表示仍在上升（反重力方向）
+                // 截断上升速度，让角色开始下落
+                soul_.velocity_ *= 0.3f;  // 大幅衰减，也可直接 = 0
+            }
+
+            // ---- 重力更新 ----
+            if (onGround && soul_.velocity_ >= 0) {
+                // 落地
+                soul_.velocity_ = 0;
+                if(soul_.ifPlaySfx ){ sfx_dong_.play(); soul_.ifPlaySfx = false; }
+                soul_.isJumping_ = false;  // 跳跃结束
+                
+            } else {
+                // 空中
+                soul_.velocity_ += ACC_GRAVITY;
+            }
+
+            // ---- 垂直位移 ----
+            soul_.x_ += soul_.velocity_ * gravX;
+            soul_.y_ += soul_.velocity_ * gravY;
+            
+            break;
         }
 
-        // ========== 后处理：同时推回所有过近的边 ==========
-        // 重新计算距离
+        default:
+            break;
+        }
+
+        // 计算距离（移动后）
         dTop    = distToSegment(soul_.x_, soul_.y_, tl.x, tl.y, tr.x, tr.y);
         dBottom = distToSegment(soul_.x_, soul_.y_, br.x, br.y, bl.x, bl.y);
         dLeft   = distToSegment(soul_.x_, soul_.y_, bl.x, bl.y, tl.x, tl.y);
         dRight  = distToSegment(soul_.x_, soul_.y_, tr.x, tr.y, br.x, br.y);
+
+        edges[0].dist = dTop;    edges[0].nX = nTopX;    edges[0].nY = nTopY;
+        edges[1].dist = dBottom; edges[1].nX = nBottomX; edges[1].nY = nBottomY;
+        edges[2].dist = dLeft;   edges[2].nX = nLeftX;   edges[2].nY = nLeftY;
+        edges[3].dist = dRight;  edges[3].nX = nRightX;  edges[3].nY = nRightY;
+
+        maxDot = -2.0f;
+        groundEdgeIdx = -1;
+        for (int i = 0; i < 4; ++i) {
+            float dot = edges[i].nX * groundNX + edges[i].nY * groundNY;
+            if (dot > maxDot) {
+                maxDot = dot;
+                groundEdgeIdx = i;
+            }
+        }
+        onGround = (groundEdgeIdx >= 0) 
+                && (edges[groundEdgeIdx].dist < margin) 
+                && (maxDot > 0.7f);
 
         // 收集所有需要推回的边
         float pushX = 0, pushY = 0;
@@ -378,26 +519,26 @@ void BattleState::updateSoul() {
             if (dist < soulRadius) {
                 sf::Vector2f cp = closestOnSegment(soul_.x_, soul_.y_, a.x, a.y, b.x, b.y);
                 float overlap = soulRadius - dist;
-                // 沿法线方向推回
                 pushX += nx * overlap;
                 pushY += ny * overlap;
                 pushCount++;
             }
         };
 
-        addPush(dTop, tl, tr, nTopX, nTopY);
-        addPush(dBottom, br, bl, nBottomX, nBottomY);  // 注意顺序
-        addPush(dLeft, bl, tl, nLeftX, nLeftY);
-        addPush(dRight, tr, br, nRightX, nRightY);
+        addPush(dTop,    tl, tr, nTopX,    nTopY);
+        addPush(dBottom, br, bl, nBottomX, nBottomY);
+        addPush(dLeft,   bl, tl, nLeftX,   nLeftY);
+        addPush(dRight,  tr, br, nRightX,  nRightY);
 
         if (pushCount > 0) {
-            // 平均推回量
-            soul_.x_ += pushX ;
-            soul_.y_ += pushY ;
+            soul_.x_ += pushX;
+            soul_.y_ += pushY;
         }
 
-        soulSprite_.setPosition({soul_.x_, soul_.y_});
-        soulLightSprite_.setPosition({soul_.x_, soul_.y_});
+        // 推回后再次确认地面状态
+        if (onGround && soul_.status_ == 1 && soul_.velocity_ > 0) {
+            soul_.velocity_ = 0;
+        }
     }
     
     switch (soul_.status_) {
@@ -405,9 +546,26 @@ void BattleState::updateSoul() {
             soulSprite_.setColor(sf::Color(255, 0, 0, 255));
             soulLightSprite_.setColor(sf::Color(255, 0, 0, 200));
             break;
+        case 1:
+            soulSprite_.setColor(sf::Color(0, 0, 255, 255));
+            soulLightSprite_.setColor(sf::Color(0, 0, 255, 200));
+            break;
+
         default:
             break;
     }
+
+    if (soul_.rotationIfSmooth)
+    {
+        soul_.dir_ += (soul_.targetDit_ - soul_.dir_) * soul_.rotationSmoothFactor;
+        soulSprite_.setRotation(soul_.angle_(soul_.dir_));
+    }
+    else{
+        soulSprite_.setRotation(soul_.angle_(soul_.dir_));
+    }
+
+    soulSprite_.setPosition({soul_.x_, soul_.y_});
+    soulLightSprite_.setPosition({soul_.x_, soul_.y_});
 }
 
 void BattleState::drawSoul(sf::RenderWindow& window) {

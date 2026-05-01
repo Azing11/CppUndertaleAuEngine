@@ -57,9 +57,9 @@ const sf::Font& AssetManager::getFont(const std::string& id) const {
     throw std::runtime_error("Font not found: " + id);
 }
 
-sf::SoundBuffer& AssetManager::getSound(const std::string& id) const {
+const sf::SoundBuffer& AssetManager::getSound(const std::string& id) const {
     auto it = sounds_.find(id);
-    if (it != sounds_.end()) return const_cast<sf::SoundBuffer&>(it->second);
+    if (it != sounds_.end()) return it->second;
     throw std::runtime_error("Sound not found: " + id);
 }
 

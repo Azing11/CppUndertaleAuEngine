@@ -20,7 +20,13 @@ namespace Res
         constexpr auto BOX_BG = "box_background";
     }
     
-    namespace Audio {
+    namespace audio
+    {
         constexpr auto BATTLE_MUSIC = "resources/audio/music/music.mp3";
+    }
+
+    namespace sfx
+    {
+        constexpr auto SFX_DONG = "sfx_dong";
     }
 }

@@ -32,13 +32,9 @@ Game::Game()
         {
 
         }  
-            //=========music=========
-        {
-            assets_.loadSound("music", "resources/audio/music/music.mp3");
-        }   
             //======sfx======
         {
-
+            assets_.loadSound("sfx_dong", "resources/audio/sfx/snd_dong.wav");
         }   
     }
     // 初始状态

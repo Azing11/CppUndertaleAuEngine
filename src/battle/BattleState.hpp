@@ -31,6 +31,7 @@ private:
     DeformableSprite boxBgSprite_;      // 背景填充
 
     sf::Music music_;
+    sf::Sound sfx_dong_;
     sf::Clock battleClock;
 
     baseData::player frisk;
@@ -100,16 +101,31 @@ private:
     void drawBox(sf::RenderWindow& window);
 
     // ========== Soul ==========
+    const float ACC_GRAVITY = 0.1f;
+    const float PI = 3.14159265359f;
     struct SoulConfig {
         bool ifDisplay_ = true;
         float x_ = 320.0f, y_ = 240.0f;
+
         float dir_ = 0;
-        int status_ = 0;
+        float targetDit_ = 0;
+        bool rotationIfSmooth = false;
+        float rotationSmoothFactor = 0.1f;
+
+        int status_ = 1;
+
         float moveSpeed_ = 3.0f;
+        float velocity_ = 0;
+        float horizSpeed_ = 0.0f;   // 垂直于重力方向的速度
+        float jumpSpeed_ = 4.0f;    // 起跳初速度（起跳范围）
+        bool wasJumpPressed_ = false;   // 上一帧是否按住了跳跃键
+        bool isJumping_ = false;        // 是否处于跳跃状态（上升阶段）
+        bool ifPlaySfx = true;     //落地音效播放
+        sf::Angle angle_(float d) { return sf::degrees(-d); }
     } soul_;
 
     void setSoulPosition(float x, float y, bool ifSmooth = false);
-    void setSoulDir(float dir);
+    void setSoulDir(float dir, bool ifSmooth = true, float factor = 0.5f);
     void updateSoul();
     void drawSoul(sf::RenderWindow& window);
 };

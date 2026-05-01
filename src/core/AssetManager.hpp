@@ -15,7 +15,7 @@ public:
     // 获取资源（引用，失败抛异常）
     const sf::Texture& getTexture(const std::string& id) const;
     const sf::Font& getFont(const std::string& id) const;
-    sf::SoundBuffer& getSound(const std::string& id) const;
+    const sf::SoundBuffer& getSound(const std::string& id) const;
     
     // 检查是否存在
     bool hasTexture(const std::string& id) const;
