@@ -77,7 +77,6 @@ BattleState::BattleState(AssetManager& assets)
     boxBgSprite_.setColor(sf::Color(255, 255, 255, 200));
 }
 
-
 void BattleState::enter() {
 
     battleClock.restart();
