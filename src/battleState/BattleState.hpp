@@ -50,7 +50,7 @@ inline BattleState::BattleState(AssetManager& assets)
     background_.setPosition(sf::Vector2f(320.0f, 240.0f));
 }
 
-inline void BattleState::enter() {
+void BattleState::enter() {
     battleClock_.restart();
     statusBar_.init();
 
@@ -69,9 +69,12 @@ inline void BattleState::enter() {
     soul_.setDir(0.0f, false);
 
     sans_.setTex(SansComponent::Part::Head, assets_.getTexture(Res::sansTexture::SANS_HEAD_ONE_EYE_CLOSING));
+    button_.setSelectable(false);
 }
 
-inline void BattleState::handleEvent(const sf::Event& event) {}
+inline void BattleState::handleEvent(const sf::Event& event) {
+    button_.handleEvent(event);
+}
 
 inline void BattleState::update(float dt) {
     float t = battleClock_.getElapsedTime().asMilliseconds();
@@ -79,7 +82,7 @@ inline void BattleState::update(float dt) {
     box_.update();
     soul_.update(box_);
     statusBar_.update();
-    button_.update();
+    button_.update(dt);
 }
 
 inline void BattleState::render(sf::RenderWindow& window) {
