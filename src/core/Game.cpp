@@ -1,5 +1,5 @@
 #include "Game.hpp"
-#include "battle/BattleState.hpp"
+#include "battleState/BattleState.hpp"
 #include <iostream>
 
 Game::Game() 
