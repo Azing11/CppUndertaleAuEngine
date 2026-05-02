@@ -6,6 +6,7 @@
 #include "BoxComponent.hpp"
 #include "SoulComponent.hpp"
 #include "StatusBarComponent.hpp"
+#include "ButtonComponent.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <iostream>
@@ -30,6 +31,7 @@ private:
     BoxComponent box_;
     SoulComponent soul_;
     StatusBarComponent statusBar_;
+    ButtonComponent button_;
 };
 
 inline BattleState::BattleState(AssetManager& assets)
@@ -39,6 +41,7 @@ inline BattleState::BattleState(AssetManager& assets)
     , box_(assets)
     , soul_(assets)
     , statusBar_(assets)
+    , button_(assets)
 {
     auto bg = background_.getLocalBounds();
     background_.setOrigin({bg.size.x / 2, bg.size.y / 2});
@@ -65,7 +68,7 @@ inline void BattleState::enter() {
     soul_.setPosition(320.0f, 310.0f, false);
     soul_.setDir(0.0f, false);
 
-    sans_.setTex(1, assets_.getTexture(Res::sansTexture::SANS_HEAD_ONE_EYE_CLOSING));
+    sans_.setTex(SansComponent::Part::Head, assets_.getTexture(Res::sansTexture::SANS_HEAD_ONE_EYE_CLOSING));
 }
 
 inline void BattleState::handleEvent(const sf::Event& event) {}
@@ -76,6 +79,7 @@ inline void BattleState::update(float dt) {
     box_.update();
     soul_.update(box_);
     statusBar_.update();
+    button_.update();
 }
 
 inline void BattleState::render(sf::RenderWindow& window) {
@@ -84,4 +88,5 @@ inline void BattleState::render(sf::RenderWindow& window) {
     box_.draw(window);
     soul_.draw(window);
     statusBar_.draw(window);
+    button_.draw(window);
 }

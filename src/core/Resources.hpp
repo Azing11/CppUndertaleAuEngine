@@ -26,6 +26,20 @@ namespace Res
         constexpr auto PIXEL = "ui_pixel";
         constexpr auto BACKGROUND = "battle_background";
         constexpr auto BOX_BG = "box_background";
+        
+        constexpr auto FIGHT = "btn_fight";
+        constexpr auto FIGHT_SELECTED = "btn_fight_selected";
+
+        constexpr auto ACT = "btn_act";
+        constexpr auto ACT_SELECTED = "btn_act_selected";
+
+        constexpr auto ITEM = "btn_item";
+        constexpr auto ITEM_SELECTED = "btn_item_selected";
+        constexpr auto ITEM_EMPTY = "btn_item_empty";
+        constexpr auto ITEM_EMPTY_SELECTED = "btn_item_empty_selected";
+
+        constexpr auto MERCY = "btn_mercy";
+        constexpr auto MERCY_SELECTED = "btn_mercy_selected";
     }
     
     namespace audio

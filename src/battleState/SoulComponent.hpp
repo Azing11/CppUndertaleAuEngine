@@ -42,7 +42,7 @@ private:
     float jumpSpeed_ = 4.0f;
     bool wasJumpPressed_ = false;
     bool isJumping_ = false;
-    bool playSfx_ = true;
+    bool playSfx_ = false;
 
     static constexpr float ACC_GRAVITY = 0.1f;
     static constexpr float PI = 3.14159265359f;
