@@ -1,4 +1,6 @@
 //路径管理
+#pragma once
+
 namespace Res
 {
     namespace sansTexture
