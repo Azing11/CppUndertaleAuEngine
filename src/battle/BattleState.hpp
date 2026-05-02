@@ -43,8 +43,6 @@ private:
     sf::Font sans_font_;
     sf::Clock battleClock;
 
-    baseData::player frisk;
-
     // ========== 工具函数 ==========
     static sf::Vector2f rotatePoint(float px, float py, float cx, float cy, float angleDeg);
     static float angleLerp(float a, float b, float t);
@@ -130,7 +128,7 @@ private:
         bool wasJumpPressed_ = false;   // 上一帧是否按住了跳跃键
         bool isJumping_ = false;        // 是否处于跳跃状态（上升阶段）
         bool ifPlaySfx = true;     //落地音效播放
-        sf::Angle angle_(float d) { return sf::degrees(-d); }
+        sf::Angle toAngle(float d) { return sf::degrees(-d); }
     } soul_;
 
     void setSoulPosition(float x, float y, bool ifSmooth = false);
@@ -139,12 +137,15 @@ private:
     void drawSoul(sf::RenderWindow& window);
 
     //statusBar
-    baseData::player frisk_;
-    sf::Text text_;
+    baseData::player frisk;
+    sf::Text statusBar_text_;
+    sf::Text statusBar_hp_;
     sf::RenderTexture rt;
-    float status_bar_smooth_factor = 0.1f;
-    float status_bar_vHp = 0;//实现平滑动画
-    std::string spaces(int n) { return std::string(std::max(0, n), ' '); }
+
+    bool status_bar_ifKr_ = true;
+    float status_bar_smooth_factor_ = 0.1f;
+    float status_bar_vHp_ = 0;//实现平滑动画
+
     void initStatusBar();
     void updateStatusBar();
     void drawStatusBar(sf::RenderWindow& window);

@@ -54,7 +54,8 @@ BattleState::BattleState(AssetManager& assets)
     , sfx_dong_(assets_.getSound(Res::sfx::SFX_DONG))
     , menu_font_(assets_.getFont(Res::fonts::MENU_FONT))
     , sans_font_(assets_.getFont(Res::fonts::SANS_FONT))
-    , text_(assets_.getFont(Res::fonts::STATUS_BAR))
+    , statusBar_hp_(assets_.getFont(Res::fonts::STATUS_BAR))
+    , statusBar_text_(assets_.getFont(Res::fonts::STATUS_BAR))
     , krSprite_(assets_.getTexture(Res::uiTexture::KR))
     , hpSprite_(assets_.getTexture(Res::uiTexture::HP))
 {
@@ -340,77 +341,77 @@ void BattleState::updateSoul() {
     );
 
     // 移动处理
-    {
-        float dx = 0, dy = 0;
+{
+    float dx = 0, dy = 0;
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))    dy -= 1.0f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))  dy += 1.0f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))  dx -= 1.0f;
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) dx += 1.0f;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))    dy -= 1.0f;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))  dy += 1.0f;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))  dx -= 1.0f;
+    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) dx += 1.0f;
 
-        // 预检测边界，清零被阻挡方向的输入
-        sf::Vector2f tl, tr, bl, br;
-        getInnerEdges(tl, tr, bl, br);
+    // 预检测边界，清零被阻挡方向的输入
+    sf::Vector2f tl, tr, bl, br;
+    getInnerEdges(tl, tr, bl, br);
 
-        float dTop    = distToSegment(soul_.x_, soul_.y_, tl.x, tl.y, tr.x, tr.y);
-        float dBottom = distToSegment(soul_.x_, soul_.y_, br.x, br.y, bl.x, bl.y);
-        float dLeft   = distToSegment(soul_.x_, soul_.y_, bl.x, bl.y, tl.x, tl.y);
-        float dRight  = distToSegment(soul_.x_, soul_.y_, tr.x, tr.y, br.x, br.y);
+    float dTop    = distToSegment(soul_.x_, soul_.y_, tl.x, tl.y, tr.x, tr.y);
+    float dBottom = distToSegment(soul_.x_, soul_.y_, br.x, br.y, bl.x, bl.y);
+    float dLeft   = distToSegment(soul_.x_, soul_.y_, bl.x, bl.y, tl.x, tl.y);
+    float dRight  = distToSegment(soul_.x_, soul_.y_, tr.x, tr.y, br.x, br.y);
 
-        float margin = soulRadius + 0.5f;
+    float margin = soulRadius + 0.5f;
 
-        // 计算每条边的法线方向（朝内）
-        auto getNormal = [&](const sf::Vector2f& a, const sf::Vector2f& b) {
-            float nx = -(b.y - a.y);
-            float ny = (b.x - a.x);
-            float len = std::sqrt(nx * nx + ny * ny);
-            if (len > 0) { nx /= len; ny /= len; }
-            float midX = (a.x + b.x) / 2, midY = (a.y + b.y) / 2;
-            float toCenterX = box_.x - midX, toCenterY = box_.y - midY;
-            if (nx * toCenterX + ny * toCenterY < 0) { nx = -nx; ny = -ny; }
-            return std::make_pair(nx, ny);
-        };
+    // 计算每条边的法线方向（朝内）
+    auto getNormal = [&](const sf::Vector2f& a, const sf::Vector2f& b) {
+        float nx = -(b.y - a.y);
+        float ny = (b.x - a.x);
+        float len = std::sqrt(nx * nx + ny * ny);
+        if (len > 0) { nx /= len; ny /= len; }
+        float midX = (a.x + b.x) / 2, midY = (a.y + b.y) / 2;
+        float toCenterX = box_.x - midX, toCenterY = box_.y - midY;
+        if (nx * toCenterX + ny * toCenterY < 0) { nx = -nx; ny = -ny; }
+        return std::make_pair(nx, ny);
+    };
 
-        auto [nTopX, nTopY]       = getNormal(tl, tr);
-        auto [nBottomX, nBottomY] = getNormal(br, bl);
-        auto [nLeftX, nLeftY]     = getNormal(bl, tl);
-        auto [nRightX, nRightY]   = getNormal(tr, br);
+    auto [nTopX, nTopY]       = getNormal(tl, tr);
+    auto [nBottomX, nBottomY] = getNormal(br, bl);
+    auto [nLeftX, nLeftY]     = getNormal(bl, tl);
+    auto [nRightX, nRightY]   = getNormal(tr, br);
 
-        // ========== 地面检测（基于重力方向） ==========
-        float gravRad = soul_.dir_ * PI / 180.0f;
-        float gravX = std::sin(gravRad);
-        float gravY = std::cos(gravRad);
-        float groundNX = -gravX;
-        float groundNY = -gravY;
+    // ========== 地面检测（基于重力方向） ==========
+    float gravRad = soul_.dir_ * PI / 180.0f;
+    float gravX = std::sin(gravRad);
+    float gravY = std::cos(gravRad);
+    float groundNX = -gravX;
+    float groundNY = -gravY;
 
-        struct EdgeInfo {
-            float dist;
-            float nX, nY;
-        };
-        EdgeInfo edges[4] = {
-            {dTop,    nTopX,    nTopY},
-            {dBottom, nBottomX, nBottomY},
-            {dLeft,   nLeftX,   nLeftY},
-            {dRight,  nRightX,  nRightY}
-        };
+    struct EdgeInfo {
+        float dist;
+        float nX, nY;
+    };
+    EdgeInfo edges[4] = {
+        {dTop,    nTopX,    nTopY},
+        {dBottom, nBottomX, nBottomY},
+        {dLeft,   nLeftX,   nLeftY},
+        {dRight,  nRightX,  nRightY}
+    };
 
-        float maxDot = -2.0f;
-        int groundEdgeIdx = -1;
-        for (int i = 0; i < 4; ++i) {
-            float dot = edges[i].nX * groundNX + edges[i].nY * groundNY;
-            if (dot > maxDot) {
-                maxDot = dot;
-                groundEdgeIdx = i;
-            }
+    float maxDot = -2.0f;
+    int groundEdgeIdx = -1;
+    for (int i = 0; i < 4; ++i) {
+        float dot = edges[i].nX * groundNX + edges[i].nY * groundNY;
+        if (dot > maxDot) {
+            maxDot = dot;
+            groundEdgeIdx = i;
         }
+    }
 
-        bool onGround = (groundEdgeIdx >= 0) 
-                     && (edges[groundEdgeIdx].dist < margin) 
-                     && (maxDot > 0.7f);
+    bool onGround = (groundEdgeIdx >= 0) 
+                    && (edges[groundEdgeIdx].dist < margin) 
+                    && (maxDot > 0.7f);
 
         // ========== 预阻挡 ==========
-        switch (soul_.status_)
-        {
+    switch (soul_.status_)
+    {
         case 0:
             if (dTop < margin && dy < 0) {
                 if (nTopY < -0.1f) dy = 0;
@@ -439,13 +440,13 @@ void BattleState::updateSoul() {
 
         default:
             break;
-        }
+    }
 
         // ========== 移动 ==========
-        float length = std::sqrt(dx * dx + dy * dy);
+    float length = std::sqrt(dx * dx + dy * dy);
         
-        switch (soul_.status_)
-        {
+    switch (soul_.status_)
+    {
         case 0:// 红心模式
 
             if (length > 0) {
@@ -513,61 +514,61 @@ void BattleState::updateSoul() {
 
         default:
             break;
-        }
+    }
 
         // 计算距离（移动后）
-        dTop    = distToSegment(soul_.x_, soul_.y_, tl.x, tl.y, tr.x, tr.y);
-        dBottom = distToSegment(soul_.x_, soul_.y_, br.x, br.y, bl.x, bl.y);
-        dLeft   = distToSegment(soul_.x_, soul_.y_, bl.x, bl.y, tl.x, tl.y);
-        dRight  = distToSegment(soul_.x_, soul_.y_, tr.x, tr.y, br.x, br.y);
+    dTop    = distToSegment(soul_.x_, soul_.y_, tl.x, tl.y, tr.x, tr.y);
+    dBottom = distToSegment(soul_.x_, soul_.y_, br.x, br.y, bl.x, bl.y);
+    dLeft   = distToSegment(soul_.x_, soul_.y_, bl.x, bl.y, tl.x, tl.y);
+    dRight  = distToSegment(soul_.x_, soul_.y_, tr.x, tr.y, br.x, br.y);
 
-        edges[0].dist = dTop;    edges[0].nX = nTopX;    edges[0].nY = nTopY;
-        edges[1].dist = dBottom; edges[1].nX = nBottomX; edges[1].nY = nBottomY;
-        edges[2].dist = dLeft;   edges[2].nX = nLeftX;   edges[2].nY = nLeftY;
-        edges[3].dist = dRight;  edges[3].nX = nRightX;  edges[3].nY = nRightY;
+    edges[0].dist = dTop;    edges[0].nX = nTopX;    edges[0].nY = nTopY;
+    edges[1].dist = dBottom; edges[1].nX = nBottomX; edges[1].nY = nBottomY;
+    edges[2].dist = dLeft;   edges[2].nX = nLeftX;   edges[2].nY = nLeftY;
+    edges[3].dist = dRight;  edges[3].nX = nRightX;  edges[3].nY = nRightY;
 
-        maxDot = -2.0f;
-        groundEdgeIdx = -1;
-        for (int i = 0; i < 4; ++i) {
-            float dot = edges[i].nX * groundNX + edges[i].nY * groundNY;
-            if (dot > maxDot) {
-                maxDot = dot;
-                groundEdgeIdx = i;
-            }
-        }
-        onGround = (groundEdgeIdx >= 0) 
-                && (edges[groundEdgeIdx].dist < margin) 
-                && (maxDot > 0.7f);
-
-        // 收集所有需要推回的边
-        float pushX = 0, pushY = 0;
-        int pushCount = 0;
-
-        auto addPush = [&](float dist, const sf::Vector2f& a, const sf::Vector2f& b, float nx, float ny) {
-            if (dist < soulRadius) {
-                sf::Vector2f cp = closestOnSegment(soul_.x_, soul_.y_, a.x, a.y, b.x, b.y);
-                float overlap = soulRadius - dist;
-                pushX += nx * overlap;
-                pushY += ny * overlap;
-                pushCount++;
-            }
-        };
-
-        addPush(dTop,    tl, tr, nTopX,    nTopY);
-        addPush(dBottom, br, bl, nBottomX, nBottomY);
-        addPush(dLeft,   bl, tl, nLeftX,   nLeftY);
-        addPush(dRight,  tr, br, nRightX,  nRightY);
-
-        if (pushCount > 0) {
-            soul_.x_ += pushX;
-            soul_.y_ += pushY;
-        }
-
-        // 推回后再次确认地面状态
-        if (onGround && soul_.status_ == 1 && soul_.velocity_ > 0) {
-            soul_.velocity_ = 0;
+    maxDot = -2.0f;
+    groundEdgeIdx = -1;
+    for (int i = 0; i < 4; ++i) {
+        float dot = edges[i].nX * groundNX + edges[i].nY * groundNY;
+        if (dot > maxDot) {
+            maxDot = dot;
+            groundEdgeIdx = i;
         }
     }
+    onGround = (groundEdgeIdx >= 0) 
+            && (edges[groundEdgeIdx].dist < margin) 
+            && (maxDot > 0.7f);
+
+    // 收集所有需要推回的边
+    float pushX = 0, pushY = 0;
+    int pushCount = 0;
+
+    auto addPush = [&](float dist, const sf::Vector2f& a, const sf::Vector2f& b, float nx, float ny) {
+        if (dist < soulRadius) {
+            sf::Vector2f cp = closestOnSegment(soul_.x_, soul_.y_, a.x, a.y, b.x, b.y);
+            float overlap = soulRadius - dist;
+            pushX += nx * overlap;
+            pushY += ny * overlap;
+            pushCount++;
+        }
+    };
+
+    addPush(dTop,    tl, tr, nTopX,    nTopY);
+    addPush(dBottom, br, bl, nBottomX, nBottomY);
+    addPush(dLeft,   bl, tl, nLeftX,   nLeftY);
+    addPush(dRight,  tr, br, nRightX,  nRightY);
+
+    if (pushCount > 0) {
+        soul_.x_ += pushX;
+        soul_.y_ += pushY;
+    }
+
+    // 推回后再次确认地面状态
+    if (onGround && soul_.status_ == 1 && soul_.velocity_ > 0) {
+        soul_.velocity_ = 0;
+    }
+}
     
 
     // 绘制颜色
@@ -588,10 +589,10 @@ void BattleState::updateSoul() {
     if (soul_.rotationIfSmooth)
     {
         soul_.dir_ += (soul_.targetDit_ - soul_.dir_) * soul_.rotationSmoothFactor;
-        soulSprite_.setRotation(soul_.angle_(soul_.dir_));
+        soulSprite_.setRotation(soul_.toAngle(soul_.dir_));
     }
     else{
-        soulSprite_.setRotation(soul_.angle_(soul_.dir_));
+        soulSprite_.setRotation(soul_.toAngle(soul_.dir_));
     }
 
     soulSprite_.setPosition({soul_.x_, soul_.y_});
@@ -607,16 +608,19 @@ void BattleState::drawSoul(sf::RenderWindow& window) {
 
 // ======== StatusBar ========
 
-void BattleState::initStatusBar(){
-    frisk_.setName("FRISK");
-    frisk_.setLv(1);
+void BattleState::initStatusBar() {
+    frisk.setName("FRISK");
+    frisk.setLv(1);
 
-    text_.setCharacterSize(26);
-    text_.setFillColor(sf::Color::White);
-    text_.setPosition({35, 390});
-    text_.setLineSpacing(1.0f);
-    auto pos = text_.getPosition();
-    text_.setPosition({std::round(pos.x), std::round(pos.y)});
+    statusBar_text_.setCharacterSize(26);
+    statusBar_text_.setFillColor(sf::Color::White);
+    statusBar_text_.setPosition({35, 390});
+    statusBar_text_.setLineSpacing(1.0f);
+
+    statusBar_hp_.setCharacterSize(26);
+    statusBar_hp_.setFillColor(sf::Color::White);
+
+    statusBar_hp_.setLineSpacing(1.0f);
 
     hpSprite_.setPosition({220, 402});
     hpSprite_.setColor(sf::Color::White);
@@ -626,24 +630,32 @@ void BattleState::initStatusBar(){
     krSprite_.setColor(sf::Color::White);
     krSprite_.setScale(sf::Vector2f(1.2f, 1.2f));
 
-    frisk_.setCurrentHp(frisk_.getMaxHp());
-    maxHpRect.setScale(sf::Vector2f(1.2f * frisk_.getMaxHp(), 20.0f));
+    frisk.setCurrentHp(frisk.getMaxHp());
+    maxHpRect.setScale(sf::Vector2f(1.2f * frisk.getMaxHp(), 20.0f));
 }
 
-void BattleState::updateStatusBar(){
-    status_bar_vHp += (frisk_.getCurrentHp() - status_bar_vHp) * status_bar_smooth_factor;
-    currentHpRect.setScale(sf::Vector2f(1.2f * status_bar_vHp, 20.0f));
+void BattleState::updateStatusBar() {
+    status_bar_vHp_ += (frisk.getCurrentHp() - status_bar_vHp_) * status_bar_smooth_factor_;
+    currentHpRect.setScale(sf::Vector2f(1.2f * status_bar_vHp_, 20.0f));
 
-    krSprite_.setPosition({270 + frisk_.getMaxHp() * 1.2f, 402});
-    std::string displayText = frisk_.getName() + "  LV " + std::to_string(frisk_.getLv()) + spaces(frisk_.getLv()/3 + 15) + std::to_string(frisk_.getCurrentHp()) + " / " +std::to_string(frisk_.getMaxHp());
-    text_.setString(displayText);
+    status_bar_ifKr_ ? statusBar_hp_.setFillColor(sf::Color(255, 0, 255, 255)) : statusBar_hp_.setFillColor(sf::Color::White);
+
+    krSprite_.setPosition({270 + frisk.getMaxHp() * 1.2f, 402});
+    statusBar_hp_.setPosition({320 + frisk.getMaxHp() * 1.2f, 390});
+
+    std::string displayText = frisk.getName() + "  LV " + std::to_string(frisk.getLv());
+    std::string displayHp = std::to_string(frisk.getCurrentHp()) + " / " +std::to_string(frisk.getMaxHp());
+    
+    statusBar_text_.setString(displayText);
+    statusBar_hp_.setString(displayHp);
 }
 
-void BattleState::drawStatusBar(sf::RenderWindow& window){
-    window.draw(text_);
+void BattleState::drawStatusBar(sf::RenderWindow& window) {
+    window.draw(statusBar_text_);
     window.draw(hpSprite_);
     window.draw(maxHpRect);
     window.draw(currentHpRect);
+    window.draw(statusBar_hp_);
     window.draw(krSprite_);
 }
 
