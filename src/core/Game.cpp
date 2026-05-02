@@ -1,5 +1,6 @@
 #include "Game.hpp"
 #include "battleState/BattleState.hpp"
+#include "Resources.hpp"
 #include <iostream>
 
 Game::Game() 
@@ -8,40 +9,33 @@ Game::Game()
     window_.setFramerateLimit(60);
     
     // 预加载资源
-    {
-            //=========sans=========
-        {
-            assets_.loadTexture("sans_head_idle", "resources/sprites/Sans/head/sans_head_idle.png");
-            assets_.loadTexture("sans_head_one_eye_closed", "resources/sprites/Sans/head/sans_head_one_eye_closed.png");
+    
+    //=========sans=========
+    assets_.loadTexture(Res::sansTexture::SANS_HEAD_IDLE, "resources/sprites/Sans/head/sans_head_idle.png");
+    assets_.loadTexture(Res::sansTexture::SANS_HEAD_ONE_EYE_CLOSING, "resources/sprites/Sans/head/sans_head_one_eye_closing.png");
 
-            assets_.loadTexture("sans_body_idle", "resources/sprites/Sans/body/sans_body_idle.png");
+    assets_.loadTexture(Res::sansTexture::SANS_BODY_IDLE, "resources/sprites/Sans/body/sans_body_idle.png");
 
-            assets_.loadTexture("sans_leg", "resources/sprites/Sans/leg/sans_leg_.png");
-        }   
-            //=========soul=========
-        {
-            assets_.loadTexture("soul_", "resources/sprites/battle/soul/soul_.png");
-            assets_.loadTexture("soul_light", "resources/sprites/battle/soul/soul_light.png");
-        }   
-            //=========ui=========
-        {
-            assets_.loadTexture("kr", "resources/sprites/battle/ui/ui_kr.png");
-            assets_.loadTexture("hp", "resources/sprites/battle/ui/ui_hp.png");
-            assets_.loadTexture("ui_pixel", "resources/sprites/battle/ui/pixel.png");
-            assets_.loadTexture("battle_background", "resources/sprites/battle/ui/background.png");
-            assets_.loadTexture("box_background", "resources/sprites/battle/ui/box_background.png");
-        }   
-            //=========font=========
-        {
-            assets_.loadFont("status_bar_font", "resources/fonts/mars_needs_cunnilingus.ttf");
-            assets_.loadFont("menu_font", "resources/fonts/menu.otf");
-            assets_.loadFont("sans_font", "resources/fonts/sans.ttf");
-        }  
-            //======sfx======
-        {
-            assets_.loadSound("sfx_dong", "resources/audio/sfx/snd_dong.wav");
-        }   
-    }
+    assets_.loadTexture(Res::sansTexture::SANS_LEG, "resources/sprites/Sans/leg/sans_leg_.png");
+
+    //=========soul=========
+    assets_.loadTexture(Res::soulTexture::SOUL, "resources/sprites/battle/soul/soul_.png");
+    assets_.loadTexture(Res::soulTexture::SOUL_LIGHT, "resources/sprites/battle/soul/soul_light.png");
+    
+    //=========ui=========
+    assets_.loadTexture(Res::uiTexture::KR, "resources/sprites/battle/ui/ui_kr.png");
+    assets_.loadTexture(Res::uiTexture::HP, "resources/sprites/battle/ui/ui_hp.png");
+    assets_.loadTexture(Res::uiTexture::PIXEL, "resources/sprites/battle/ui/pixel.png");
+    assets_.loadTexture(Res::uiTexture::BACKGROUND, "resources/sprites/battle/ui/background.png");
+    assets_.loadTexture(Res::uiTexture::BOX_BG, "resources/sprites/battle/ui/box_background.png");
+    
+    //=========font=========
+    assets_.loadFont(Res::fonts::STATUS_BAR, "resources/fonts/mars_needs_cunnilingus.ttf");
+    assets_.loadFont(Res::fonts::MENU_FONT, "resources/fonts/menu.otf");
+    assets_.loadFont(Res::fonts::SANS_FONT, "resources/fonts/sans.ttf");
+    
+    //======sfx======
+    assets_.loadSound("sfx_dong", "resources/audio/sfx/snd_dong.wav");   
     // 初始状态
     states_.push(std::make_unique<BattleState>(assets_));
 }

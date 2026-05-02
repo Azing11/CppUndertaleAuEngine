@@ -51,7 +51,7 @@ private:
 };
 
 inline SoulComponent::SoulComponent(AssetManager& assets)
-    : sprite_(assets.getTexture(Res::soulTexture::SOUL_))
+    : sprite_(assets.getTexture(Res::soulTexture::SOUL))
     , lightSprite_(assets.getTexture(Res::soulTexture::SOUL_LIGHT))
     , sfxDong_(assets.getSound(Res::sfx::SFX_DONG))
 {

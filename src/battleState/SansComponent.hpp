@@ -7,9 +7,21 @@
 
 class SansComponent {
 public:
+    enum class Part {
+        Head = 1,
+        Body = 2,
+        Leg = 3
+    };
+
     SansComponent(AssetManager& assets);
 
     void setPosition(float x, float y, bool smooth = false, float factor = 0.1f);
+    
+    // 按部位设置纹理
+    void setTex(Part part, const sf::Texture& tex);
+    // n: 1=头, 2=身体, 3=腿
+    void setTex(int n, const sf::Texture& tex);
+    
     void update(float t);
     void draw(sf::RenderWindow& window);
 
@@ -60,6 +72,43 @@ inline void SansComponent::setPosition(float x, float y, bool smooth, float fact
         smooth_ = false;
         baseX_ = x;
         baseY_ = y;
+    }
+}
+
+inline void SansComponent::setTex(Part part, const sf::Texture& tex) {
+    switch (part) {
+        case Part::Head:
+            headSprite_.setTexture(tex, true);  // true = 重置矩形
+            {
+                auto bounds = headSprite_.getLocalBounds();
+                headSprite_.setOrigin({bounds.size.x / 2, bounds.size.y / 1.5f});
+                headSprite_.setScale({0.5f, 0.5f});
+            }
+            break;
+            
+        case Part::Body:
+            bodySprite_.setTexture(tex, true);
+            {
+                auto bounds = bodySprite_.getLocalBounds();
+                bodySprite_.setOrigin({bounds.size.x / 2, bounds.size.y / 1.5f});
+                bodySprite_.setScale({0.5f, 0.5f});
+            }
+            break;
+            
+        case Part::Leg:
+            legSprite_.setTexture(tex);
+            break;
+    }
+}
+
+inline void SansComponent::setTex(int n, const sf::Texture& tex) {
+    switch (n) {
+        case 1: setTex(Part::Head, tex); break;
+        case 2: setTex(Part::Body, tex); break;
+        case 3: setTex(Part::Leg, tex); break;
+        default:
+            
+            break;
     }
 }
 

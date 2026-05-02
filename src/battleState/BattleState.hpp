@@ -64,6 +64,8 @@ inline void BattleState::enter() {
 
     soul_.setPosition(320.0f, 310.0f, false);
     soul_.setDir(0.0f, false);
+
+    sans_.setTex(1, assets_.getTexture(Res::sansTexture::SANS_HEAD_ONE_EYE_CLOSING));
 }
 
 inline void BattleState::handleEvent(const sf::Event& event) {}
