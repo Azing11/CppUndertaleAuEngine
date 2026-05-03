@@ -21,6 +21,8 @@ public:
     // 直接设置选中项（-1 表示无选择）
     void setSelection(int index);
     int getSelection() const;
+    float getSelectionXPosition();
+    float getSelectionYPosition();
 
 private:
     void updateButtonVisuals();
@@ -181,4 +183,12 @@ inline void ButtonComponent::draw(sf::RenderWindow& window) {
     window.draw(act_);
     window.draw(item_);
     window.draw(mercy_);
+}
+
+inline float ButtonComponent::getSelectionXPosition() {
+    float xPositions[4] = {90, 240, 390, 540};
+    return xPositions[getSelection()];
+}
+inline float ButtonComponent::getSelectionYPosition() {
+    return currentY_[getSelection()];
 }

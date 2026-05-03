@@ -16,8 +16,9 @@ public:
     void render(sf::RenderWindow& window);
 
     void startTurn(baseData::Turn::Owner owner) {
-        if (turn_.currentOwner == owner) return;  // 防重复
-        turn_.currentOwner = owner;
+        if (turn_.currentOwner != owner) { // 防重复
+            turn_.currentOwner = owner;
+        }
         onTurnChanged();  // 回合切换时的设置
     }
     
@@ -51,6 +52,8 @@ private:
     baseData::Turn turn_;
 
     using Owner = baseData::Turn::Owner;
+    using PlayerPhase = baseData::Turn::PlayerPhase;
+    const float SOUL_OFFSET_X = -40;
 };
 
 TurnController::TurnController(AssetManager& assets)
@@ -75,7 +78,7 @@ void TurnController::init() {
     if (!music_.openFromFile(Res::audio::BATTLE_MUSIC)) { std::cerr << "Fail to load music\n"; }
 
     setTurnCount(0);
-    startTurn(Owner::Enemy);
+    startTurn(Owner::Player);
 
     sans_.setPosition(320.0f, 320.0f - 65.0f - 40.0f, false);
     soul_.setPosition(320.0f, 310.0f, false);
@@ -84,11 +87,12 @@ void TurnController::init() {
 
 void TurnController::onTurnChanged() {
     if (turn_.currentOwner == Owner::Player) {
-        soul_.setStatus(-1);
+        soul_.setMode(SoulComponent::Mode::Menu);
         button_.setSelectable(true);
         box_.setPosition(320.0f, 320.0f, true);
         box_.setSize(283.0f, 283.0f, 65.0f, 65.0f, true);
         box_.setAngle(0.0f, true);
+        turn_.currentPlayerPhase = PlayerPhase::Selecting;
     } else {
         button_.setSelectable(false);
     }
@@ -107,15 +111,26 @@ inline void TurnController::update(float dt) {
     statusBar_.update(dt);
 
     if (turn_.isEnded()) { end(); }
+
+    if (turn_.currentOwner == Owner::Player)
+    {
+        if(turn_.currentPlayerPhase == PlayerPhase::Selecting){
+            button_.setSelectable(true); 
+            auto Selection = button_.getSelection();
+            soul_.setDir(90.0f);
+            soul_.setDisplayable(true);
+            soul_.setPosition(button_.getSelectionXPosition() + SOUL_OFFSET_X, button_.getSelectionYPosition());
+        } else button_.setSelectable(false);
+    }
 }
 
 inline void TurnController::render(sf::RenderWindow& window) {
     window.draw(background_);
     sans_.draw(window);
     box_.draw(window);
-    soul_.draw(window);
     statusBar_.draw(window);
     button_.draw(window);
+    soul_.draw(window);
 }
 
 void TurnController::end() {

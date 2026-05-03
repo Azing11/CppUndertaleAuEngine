@@ -21,7 +21,8 @@ namespace baseData {
         Owner currentOwner;
         int currentRound = 0;
         
-
+        enum class PlayerPhase	 : uint8_t { Selecting, OnBranch, Result};
+        PlayerPhase	 currentPlayerPhase;
         
         bool isEnded() const { return currentRound >= maxRounds; }
     };
