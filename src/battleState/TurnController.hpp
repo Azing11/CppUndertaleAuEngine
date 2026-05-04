@@ -6,6 +6,7 @@
 #include "StatusBarComponent.hpp"
 #include "ButtonComponent.hpp"
 #include "core/baseData.hpp"
+#include "core/Typewriter.hpp"
 
 class TurnController {
 public:
@@ -22,6 +23,11 @@ public:
         onTurnChanged();  // 回合切换时的设置
     }
     
+    void setPlayerPhase(baseData::Turn::PlayerPhase phase) {
+        turn_.currentPlayerPhase = phase;
+        onPhaseChanged();  // 玩家阶段切换时的设置
+    }
+
     void endCurrentTurn() {
         turn_.currentOwner = (turn_.currentOwner == baseData::Turn::Owner::Player)
                              ? baseData::Turn::Owner::Enemy
@@ -35,6 +41,7 @@ public:
 
 private:
     void onTurnChanged();  // 回合切换回调
+    void onPhaseChanged(); // 玩家阶段切换回调
     void end();
 
     AssetManager& assets_;
@@ -48,6 +55,7 @@ private:
     SoulComponent soul_;
     StatusBarComponent statusBar_;
     ButtonComponent button_;
+    Typewriter typer_;
     
     baseData::Turn turn_;
 
@@ -64,6 +72,7 @@ TurnController::TurnController(AssetManager& assets)
     , soul_(assets)
     , statusBar_(assets)
     , button_(assets)
+    , typer_(assets.getFont(Res::fonts::MENU_FONT), 24)
 {
     auto bg = background_.getLocalBounds();
     background_.setOrigin({bg.size.x / 2, bg.size.y / 2});
@@ -81,8 +90,8 @@ void TurnController::init() {
     startTurn(Owner::Player);
 
     sans_.setPosition(320.0f, 320.0f - 65.0f - 40.0f, false);
-    soul_.setPosition(320.0f, 310.0f, false);
-    soul_.setDir(0.0f, false);
+    //soul_.setPosition(320.0f, 310.0f, false);
+    //soul_.setDir(0.0f, false);
 }
 
 void TurnController::onTurnChanged() {
@@ -92,9 +101,25 @@ void TurnController::onTurnChanged() {
         box_.setPosition(320.0f, 320.0f, true);
         box_.setSize(283.0f, 283.0f, 65.0f, 65.0f, true);
         box_.setAngle(0.0f, true);
-        turn_.currentPlayerPhase = PlayerPhase::Selecting;
+        setPlayerPhase(PlayerPhase::Selecting);
     } else {
         button_.setSelectable(false);
+    }
+}
+
+void TurnController::onPhaseChanged() {
+    if (turn_.currentOwner == Owner::Player) {
+        if (turn_.currentPlayerPhase == PlayerPhase::Selecting) {
+            button_.setSelectable(true);
+        }
+        else if(turn_.currentPlayerPhase == PlayerPhase::OnBranch) {
+            button_.setSelected(false);
+            button_.setSelectable(false);
+            typer_.print("*you chosed " + std::to_string(button_.getSelection()), 320.0f, 200.0f);
+        }
+        else if(turn_.currentPlayerPhase == PlayerPhase::Result) {
+            
+        }
     }
 }
 
@@ -109,6 +134,7 @@ inline void TurnController::update(float dt) {
     button_.update(dt);
     soul_.update(box_);
     statusBar_.update(dt);
+    typer_.update(dt);
 
     if (turn_.isEnded()) { end(); }
 
@@ -120,7 +146,12 @@ inline void TurnController::update(float dt) {
             soul_.setDir(90.0f);
             soul_.setDisplayable(true);
             soul_.setPosition(button_.getSelectionXPosition() + SOUL_OFFSET_X, button_.getSelectionYPosition());
-        } else button_.setSelectable(false);
+            if(button_.getSelected()){
+                setPlayerPhase(PlayerPhase::OnBranch);
+                printf("Player selected option %d\n", Selection);
+            }
+        }
+
     }
 }
 
@@ -131,8 +162,9 @@ inline void TurnController::render(sf::RenderWindow& window) {
     statusBar_.draw(window);
     button_.draw(window);
     soul_.draw(window);
+    typer_.draw(window);
 }
 
 void TurnController::end() {
-    
+
 }

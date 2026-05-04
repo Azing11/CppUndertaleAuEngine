@@ -21,6 +21,8 @@ public:
     // 直接设置选中项（-1 表示无选择）
     void setSelection(int index);
     int getSelection() const;
+    void setSelected(bool selected) { this->selected = selected; }
+    bool getSelected();
     float getSelectionXPosition();
     float getSelectionYPosition();
 
@@ -36,6 +38,7 @@ private:
     sf::Sprite fight_, act_, item_, mercy_;
 
     int selection_ = 0;
+    bool selected = false;
     bool selectable_ = true;
 
     // 每个按钮的当前 Y（用于平滑上浮）
@@ -113,6 +116,19 @@ inline int ButtonComponent::getSelection() const {
     return selectable_ ? selection_ : -1;
 }
 
+inline bool ButtonComponent::getSelected() {
+    return selected;
+}
+
+inline float ButtonComponent::getSelectionXPosition() {
+    float xPositions[4] = {90, 240, 390, 540};
+    return xPositions[getSelection()];
+}
+
+inline float ButtonComponent::getSelectionYPosition() {
+    return currentY_[getSelection()];
+}
+
 inline void ButtonComponent::handleEvent(const sf::Event& event) {
     if (!selectable_) return;
     if (!event.is<sf::Event::KeyReleased>()) return;
@@ -127,6 +143,9 @@ inline void ButtonComponent::handleEvent(const sf::Event& event) {
     else if (keyEvent->code == sf::Keyboard::Key::Right) {
         selection_ = (selection_ + 1) % 4;
         changed = true;
+    }
+    else if (keyEvent->code == sf::Keyboard::Key::Enter || keyEvent->code == sf::Keyboard::Key::Z) {
+        selected = true;
     }
 
     if (changed) {
@@ -183,12 +202,4 @@ inline void ButtonComponent::draw(sf::RenderWindow& window) {
     window.draw(act_);
     window.draw(item_);
     window.draw(mercy_);
-}
-
-inline float ButtonComponent::getSelectionXPosition() {
-    float xPositions[4] = {90, 240, 390, 540};
-    return xPositions[getSelection()];
-}
-inline float ButtonComponent::getSelectionYPosition() {
-    return currentY_[getSelection()];
 }
