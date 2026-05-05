@@ -50,6 +50,7 @@ namespace Res
     namespace sfx
     {
         constexpr auto SFX_DONG = "sfx_dong";
+        constexpr auto SFX_VOICE_TYPER = "sfx_voice_typer";
     }
     
     namespace fonts

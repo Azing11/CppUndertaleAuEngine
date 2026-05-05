@@ -34,8 +34,9 @@ namespace {
         AssetEntry{Res::fonts::SANS_FONT, "resources/fonts/sans.ttf"}
     };
 
-    constexpr std::array<AssetEntry, 1> soundEntries = {
-        AssetEntry{Res::sfx::SFX_DONG, "resources/audio/sfx/snd_dong.wav"}
+    constexpr std::array<AssetEntry, 2> soundEntries = {
+        AssetEntry{Res::sfx::SFX_DONG, "resources/audio/sfx/snd_dong.wav"},
+        AssetEntry{Res::sfx::SFX_VOICE_TYPER, "resources/audio/sfx/snd_voice_typer.wav"}
     };
 }
 

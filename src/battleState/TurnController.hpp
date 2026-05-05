@@ -28,7 +28,7 @@ public:
         onPhaseChanged();  // 玩家阶段切换时的设置
     }
 
-    void endCurrentTurn() {
+    void nextTurn() {
         turn_.currentOwner = (turn_.currentOwner == baseData::Turn::Owner::Player)
                              ? baseData::Turn::Owner::Enemy
                              : baseData::Turn::Owner::Player;
@@ -50,12 +50,16 @@ private:
     sf::Music music_;
     sf::Clock battleClock_;
 
+    std::string turnText_ = "<col>white *the<col>red<shake>0.5 enemy";
+
     SansComponent sans_;
     BoxComponent box_;
     SoulComponent soul_;
     StatusBarComponent statusBar_;
     ButtonComponent button_;
     Typewriter typer_;
+    
+    bool typingCompleted_ = false;
     
     baseData::Turn turn_;
 
@@ -72,8 +76,10 @@ TurnController::TurnController(AssetManager& assets)
     , soul_(assets)
     , statusBar_(assets)
     , button_(assets)
-    , typer_(assets.getFont(Res::fonts::MENU_FONT), 24)
+    , typer_(24)
 {
+    typer_.setFont(assets.getFont(Res::fonts::MENU_FONT));
+    typer_.setSoundBuffer(assets.getSound(Res::sfx::SFX_VOICE_TYPER));
     auto bg = background_.getLocalBounds();
     background_.setOrigin({bg.size.x / 2, bg.size.y / 2});
     background_.setScale({1.0f, 0.5f});
@@ -87,7 +93,8 @@ void TurnController::init() {
     if (!music_.openFromFile(Res::audio::BATTLE_MUSIC)) { std::cerr << "Fail to load music\n"; }
 
     setTurnCount(0);
-    startTurn(Owner::Player);
+    startTurn(Owner::Enemy);
+    soul_.setMode(SoulComponent::Mode::Gravity);
 
     sans_.setPosition(320.0f, 320.0f - 65.0f - 40.0f, false);
     //soul_.setPosition(320.0f, 310.0f, false);
@@ -111,14 +118,34 @@ void TurnController::onPhaseChanged() {
     if (turn_.currentOwner == Owner::Player) {
         if (turn_.currentPlayerPhase == PlayerPhase::Selecting) {
             button_.setSelectable(true);
+            typer_.print(turnText_, 320.0f - 283.0f + 15.0f, 320.0f - 65.0f + 10.0f, 0.05f);
         }
         else if(turn_.currentPlayerPhase == PlayerPhase::OnBranch) {
             button_.setSelected(false);
             button_.setSelectable(false);
-            typer_.print("*you chosed " + std::to_string(button_.getSelection()), 320.0f, 200.0f);
+            switch (button_.getSelection()) {
+            case 0: // FIGHT
+                printf("Player selected FIGHT\n");
+                break;
+            case 1: // ACT
+                printf("Player selected ACT\n");
+                typer_.reset();
+                typer_.print("*check", 320.0f - 283.0f + 15.0f, 320.0f - 65.0f + 10.0f, 0);
+                break;
+            case 2: // ITEM
+                printf("Player selected ITEM\n");
+                break;
+            case 3: // MERCY
+                printf("Player selected MERCY\n");
+                break;
+            
+            default:
+                break;
+            }
+
         }
         else if(turn_.currentPlayerPhase == PlayerPhase::Result) {
-            
+            typingCompleted_ = false;
         }
     }
 }
@@ -134,25 +161,28 @@ inline void TurnController::update(float dt) {
     button_.update(dt);
     soul_.update(box_);
     statusBar_.update(dt);
-    typer_.update(dt);
+    if (typer_.update(dt)) {
+        typingCompleted_ = true;
+    } else {
+        typingCompleted_ = false;
+    }
 
     if (turn_.isEnded()) { end(); }
 
     if (turn_.currentOwner == Owner::Player)
     {
         if(turn_.currentPlayerPhase == PlayerPhase::Selecting){
-            button_.setSelectable(true); 
+            button_.setSelectable(true);
             auto Selection = button_.getSelection();
             soul_.setDir(90.0f);
             soul_.setDisplayable(true);
             soul_.setPosition(button_.getSelectionXPosition() + SOUL_OFFSET_X, button_.getSelectionYPosition());
             if(button_.getSelected()){
                 setPlayerPhase(PlayerPhase::OnBranch);
-                printf("Player selected option %d\n", Selection);
             }
         }
-
     }
+
 }
 
 inline void TurnController::render(sf::RenderWindow& window) {

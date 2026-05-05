@@ -5,13 +5,41 @@
 #include "core/Resources.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Window/Keyboard.hpp>
+#include <memory>
 
 class SoulComponent {
 public:
     enum class Mode : int8_t {
-        Menu = -1,      // 菜单状态，不更新物理
+        Menu = -1,      // 菜单状态
         Normal = 0,     // 普通四向移动
         Gravity = 1     // 重力平台跳跃
+    };
+
+    class SoulState {
+    public:
+        virtual ~SoulState() = default;
+        virtual void update(SoulComponent& soul, const BoxComponent& box) = 0;
+        virtual void draw(SoulComponent& soul, sf::RenderWindow& window) = 0;
+    };
+
+    class MenuState : public SoulState {
+    public:
+        void update(SoulComponent& soul, const BoxComponent& box) override;
+        void draw(SoulComponent& soul, sf::RenderWindow& window) override;
+    };
+
+    class BattleState : public SoulState {
+    public:
+        enum SubMode {
+            Normal,
+            Gravity
+        };
+        BattleState(SubMode sub) : subMode_(sub) {}
+        SubMode getSubMode() const { return subMode_; }
+        void update(SoulComponent& soul, const BoxComponent& box) override;
+        void draw(SoulComponent& soul, sf::RenderWindow& window) override;
+    private:
+        SubMode subMode_;
     };
 
     SoulComponent(AssetManager& assets);
@@ -21,10 +49,20 @@ public:
     void update(const BoxComponent& box);
     void draw(sf::RenderWindow& window);
 
-    void setMode(Mode m) { mode_ = m; }
+    void setMode(Mode m) {
+        if (m == Mode::Menu) currentState_ = std::make_unique<MenuState>();
+        else if (m == Mode::Normal) currentState_ = std::make_unique<BattleState>(BattleState::Normal);
+        else if (m == Mode::Gravity) currentState_ = std::make_unique<BattleState>(BattleState::Gravity);
+    }
     void setDisplayable(bool display) { display_ = display; }
 
-    Mode getMode() const { return mode_; }
+    Mode getMode() const {
+        if (dynamic_cast<MenuState*>(currentState_.get())) return Mode::Menu;
+        else if (auto* bs = dynamic_cast<BattleState*>(currentState_.get())) {
+            return bs->getSubMode() == BattleState::Normal ? Mode::Normal : Mode::Gravity;
+        }
+        return Mode::Normal;
+    }
     float getX() const { return x_; }
     float getY() const { return y_; }
 
@@ -45,7 +83,7 @@ private:
     bool smoothRotation_ = false;
     float rotationFactor_ = 0.1f;
 
-    Mode mode_ = Mode::Normal;
+    std::unique_ptr<SoulState> currentState_;
 
     float moveSpeed_ = 2.0f;
     float velocity_ = 0.0f;         // 重力模式下的垂直速度
@@ -58,6 +96,8 @@ private:
     static constexpr float ACC_GRAVITY = 0.1f;
     static constexpr float PI = 3.14159265359f;
 
+    BattleState::SubMode lastBattleMode = BattleState::Normal;
+
     sf::Angle toAngle(float d) { return sf::degrees(-d); }
 };
 
@@ -65,6 +105,7 @@ inline SoulComponent::SoulComponent(AssetManager& assets)
     : sprite_(assets.getTexture(Res::soulTexture::SOUL))
     , lightSprite_(assets.getTexture(Res::soulTexture::SOUL_LIGHT))
     , sfxDong_(assets.getSound(Res::sfx::SFX_DONG))
+    , currentState_(std::make_unique<BattleState>(BattleState::Normal))
 {
     auto bounds = sprite_.getLocalBounds();
     sprite_.setOrigin({bounds.size.x / 2, bounds.size.y / 2});
@@ -100,29 +141,63 @@ inline void SoulComponent::setDir(float dir, bool smooth, float factor) {
 }
 
 inline void SoulComponent::update(const BoxComponent& box) {
+    currentState_->update(*this, box);
+}
+
+inline void SoulComponent::draw(sf::RenderWindow& window) {
+    currentState_->draw(*this, window);
+}
+
+inline void SoulComponent::MenuState::update(SoulComponent& soul, const BoxComponent& box) {
+    if (soul.smoothRotation_) {
+        soul.dir_ += (soul.targetDir_ - soul.dir_) * soul.rotationFactor_;
+    }
+
+    if (soul.smoothPosition_) {
+        soul.x_ += (soul.targetX_ - soul.x_) * soul.positionFactor_;
+        soul.y_ += (soul.targetY_ - soul.y_) * soul.positionFactor_;
+    }
+
+    soul.sprite_.setPosition({soul.x_, soul.y_});
+    soul.lightSprite_.setPosition({soul.x_, soul.y_});
+    soul.sprite_.setRotation(soul.toAngle(soul.dir_));
+    soul.lightSprite_.setRotation(soul.toAngle(soul.dir_));
+
+    switch (soul.lastBattleMode) {
+        case BattleState::Normal:
+            soul.sprite_.setColor(sf::Color(255, 0, 0, 255));
+            soul.lightSprite_.setColor(sf::Color(255, 0, 0, 128));
+            break;
+        case BattleState::Gravity:
+            soul.sprite_.setColor(sf::Color(0, 0, 255, 255));
+            soul.lightSprite_.setColor(sf::Color(0, 0, 255, 128));
+            break;
+    }
+}
+
+inline void SoulComponent::MenuState::draw(SoulComponent& soul, sf::RenderWindow& window) {
+    if (soul.display_) {
+        window.draw(soul.lightSprite_);
+        window.draw(soul.sprite_);
+    }
+}
+
+inline void SoulComponent::BattleState::update(SoulComponent& soul, const BoxComponent& box) {
     using BattleUtils::distToSegment;
 
-    auto bounds = sprite_.getLocalBounds();
+    auto bounds = soul.sprite_.getLocalBounds();
     float soulRadius = std::max(
-        (bounds.size.x * sprite_.getScale().x) / 2.0f,
-        (bounds.size.y * sprite_.getScale().y) / 2.0f
+        (bounds.size.x * soul.sprite_.getScale().x) / 2.0f,
+        (bounds.size.y * soul.sprite_.getScale().y) / 2.0f
     );
 
-    if (smoothRotation_) {
-        dir_ += (targetDir_ - dir_) * rotationFactor_;
+    if (soul.smoothRotation_) {
+        soul.dir_ += (soul.targetDir_ - soul.dir_) * soul.rotationFactor_;
     }
 
-    if (smoothPosition_) {
-        x_ += (targetX_ - x_) * positionFactor_;
-        y_ += (targetY_ - y_) * positionFactor_;
-    }
-
-    if (mode_ == Mode::Menu) {
-        // 菜单模式：只更新位置和旋转，不做物理/绘制颜色处理
-        sprite_.setPosition({x_, y_});
-        lightSprite_.setPosition({x_, y_});
-        sprite_.setRotation(toAngle(dir_));
-        return;
+    if (soul.smoothPosition_) {
+        soul.x_ += (soul.targetX_ - soul.x_) * soul.positionFactor_;
+        soul.y_ += (soul.targetY_ - soul.y_) * soul.positionFactor_;
     }
 
     float dx = 0, dy = 0;
@@ -134,10 +209,10 @@ inline void SoulComponent::update(const BoxComponent& box) {
     sf::Vector2f tl, tr, bl, br;
     box.getInnerEdges(tl, tr, bl, br);
 
-    float dTop    = distToSegment(x_, y_, tl.x, tl.y, tr.x, tr.y);
-    float dBottom = distToSegment(x_, y_, br.x, br.y, bl.x, bl.y);
-    float dLeft   = distToSegment(x_, y_, bl.x, bl.y, tl.x, tl.y);
-    float dRight  = distToSegment(x_, y_, tr.x, tr.y, br.x, br.y);
+    float dTop    = distToSegment(soul.x_, soul.y_, tl.x, tl.y, tr.x, tr.y);
+    float dBottom = distToSegment(soul.x_, soul.y_, br.x, br.y, bl.x, bl.y);
+    float dLeft   = distToSegment(soul.x_, soul.y_, bl.x, bl.y, tl.x, tl.y);
+    float dRight  = distToSegment(soul.x_, soul.y_, tr.x, tr.y, br.x, br.y);
 
     float margin = soulRadius + 0.5f;
 
@@ -157,7 +232,7 @@ inline void SoulComponent::update(const BoxComponent& box) {
     auto [nLeftX, nLeftY]     = getNormal(bl, tl);
     auto [nRightX, nRightY]   = getNormal(tr, br);
 
-    float gravRad = dir_ * PI / 180.0f;
+    float gravRad = soul.dir_ * PI / 180.0f;
     float gravX = std::sin(gravRad);
     float gravY = std::cos(gravRad);
     float groundNX = -gravX;
@@ -185,79 +260,73 @@ inline void SoulComponent::update(const BoxComponent& box) {
                     && (edges[groundEdgeIdx].dist < margin)
                     && (maxDot > 0.7f);
 
-    switch (mode_) {
-        case Mode::Normal:
+    switch (subMode_) {
+        case Normal:
             if (dTop < margin && dy < 0)    { if (nTopY < -0.1f) dy = 0; }
             if (dBottom < margin && dy > 0) { if (nBottomY > 0.1f) dy = 0; }
             if (dLeft < margin && dx < 0)   { if (nLeftX < -0.1f) dx = 0; }
             if (dRight < margin && dx > 0)  { if (nRightX > 0.1f) dx = 0; }
             break;
 
-        case Mode::Gravity:
+        case Gravity:
             if (dLeft < margin && dx < 0)   { if (nLeftX < -0.1f) dx = 0; }
             if (dRight < margin && dx > 0)  { if (nRightX > 0.1f) dx = 0; }
             break;
-
-        case Mode::Menu:
-            break; // 前面已处理，这里不会走到
     }
 
     float length = std::sqrt(dx * dx + dy * dy);
 
-    switch (mode_) {
-        case Mode::Normal:
+    switch (subMode_) {
+        case Normal:
             if (length > 0) {
-                x_ += (dx / length) * moveSpeed_;
-                y_ += (dy / length) * moveSpeed_;
+                soul.x_ += (dx / length) * soul.moveSpeed_;
+                soul.y_ += (dy / length) * soul.moveSpeed_;
             }
             break;
 
-        case Mode::Gravity: {
+        case Gravity: {
             float perpX = -gravY;
             float perpY = gravX;
             float moveInput = dx * perpX + dy * perpY;
-            float targetHorizSpeed = moveInput * moveSpeed_;
+            float targetHorizSpeed = moveInput * soul.moveSpeed_;
             float horizAccel = onGround ? 0.3f : 0.15f;
-            horizSpeed_ += (targetHorizSpeed - horizSpeed_) * horizAccel;
-            x_ += horizSpeed_ * perpX;
-            y_ += horizSpeed_ * perpY;
+            soul.horizSpeed_ += (targetHorizSpeed - soul.horizSpeed_) * horizAccel;
+            soul.x_ += soul.horizSpeed_ * perpX;
+            soul.y_ += soul.horizSpeed_ * perpY;
 
             float jumpInput = -(dx * gravX + dy * gravY);
             bool jumpPressed = jumpInput > 0.5f;
-            bool jumpJustPressed = jumpPressed && !wasJumpPressed_;
+            bool jumpJustPressed = jumpPressed && !soul.wasJumpPressed_;
 
             if (onGround && jumpJustPressed) {
-                velocity_ = -jumpSpeed_;
-                isJumping_ = true;
+                soul.velocity_ = -soul.jumpSpeed_;
+                soul.isJumping_ = true;
             }
-            wasJumpPressed_ = jumpPressed;
+            soul.wasJumpPressed_ = jumpPressed;
 
-            if (isJumping_ && !jumpPressed && velocity_ < 0) {
-                velocity_ *= 0.3f;
+            if (soul.isJumping_ && !jumpPressed && soul.velocity_ < 0) {
+                soul.velocity_ *= 0.3f;
             }
 
-            if (onGround && velocity_ >= 0) {
-                velocity_ = 0;
-                if (playSfx_) { sfxDong_.play(); playSfx_ = false; }
-                isJumping_ = false;
+            if (onGround && soul.velocity_ >= 0) {
+                soul.velocity_ = 0;
+                if (soul.playSfx_) { soul.sfxDong_.play(); soul.playSfx_ = false; }
+                soul.isJumping_ = false;
             } else {
-                velocity_ += ACC_GRAVITY;
+                soul.velocity_ += ACC_GRAVITY;
             }
 
-            x_ += velocity_ * gravX;
-            y_ += velocity_ * gravY;
+            soul.x_ += soul.velocity_ * gravX;
+            soul.y_ += soul.velocity_ * gravY;
             break;
         }
-
-        case Mode::Menu:
-            break;
     }
 
-    // 重新计算距离用于碰撞推开
-    dTop    = distToSegment(x_, y_, tl.x, tl.y, tr.x, tr.y);
-    dBottom = distToSegment(x_, y_, br.x, br.y, bl.x, bl.y);
-    dLeft   = distToSegment(x_, y_, bl.x, bl.y, tl.x, tl.y);
-    dRight  = distToSegment(x_, y_, tr.x, tr.y, br.x, br.y);
+    // 重新计算距离用于碰撞推回
+    dTop    = distToSegment(soul.x_, soul.y_, tl.x, tl.y, tr.x, tr.y);
+    dBottom = distToSegment(soul.x_, soul.y_, br.x, br.y, bl.x, bl.y);
+    dLeft   = distToSegment(soul.x_, soul.y_, bl.x, bl.y, tl.x, tl.y);
+    dRight  = distToSegment(soul.x_, soul.y_, tr.x, tr.y, br.x, br.y);
 
     edges[0].dist = dTop;    edges[0].nX = nTopX;    edges[0].nY = nTopY;
     edges[1].dist = dBottom; edges[1].nX = nBottomX; edges[1].nY = nBottomY;
@@ -295,37 +364,35 @@ inline void SoulComponent::update(const BoxComponent& box) {
     addPush(dRight,  tr, br, nRightX,  nRightY);
 
     if (pushCount > 0) {
-        x_ += pushX / pushCount;
-        y_ += pushY / pushCount;
+        soul.x_ += pushX / pushCount;
+        soul.y_ += pushY / pushCount;
     }
 
-    if (onGround && mode_ == Mode::Gravity && velocity_ > 0) {
-        velocity_ = 0;
+    if (onGround && subMode_ == Gravity && soul.velocity_ > 0) {
+        soul.velocity_ = 0;
     }
 
-    switch (mode_) {
-        case Mode::Normal:
-            sprite_.setColor(sf::Color(255, 0, 0, 255));
-            lightSprite_.setColor(sf::Color(255, 0, 0, 200));
+    switch (subMode_) {
+        case Normal:
+            soul.sprite_.setColor(sf::Color(255, 0, 0, 255));
+            soul.lightSprite_.setColor(sf::Color(255, 0, 0, 128));
             break;
-        case Mode::Gravity:
-            sprite_.setColor(sf::Color(0, 0, 255, 255));
-            lightSprite_.setColor(sf::Color(0, 0, 255, 200));
-            break;
-        case Mode::Menu:
-            sprite_.setColor(sf::Color(255, 0, 0, 255));
-            lightSprite_.setColor(sf::Color(255, 0, 0, 200));
+        case Gravity:
+            soul.sprite_.setColor(sf::Color(0, 0, 255, 255));
+            soul.lightSprite_.setColor(sf::Color(0, 0, 255, 128));
             break;
     }
 
-    sprite_.setPosition({x_, y_});
-    lightSprite_.setPosition({x_, y_});
-    sprite_.setRotation(toAngle(dir_));
+    soul.sprite_.setPosition({soul.x_, soul.y_});
+    soul.lightSprite_.setPosition({soul.x_, soul.y_});
+    soul.sprite_.setRotation(soul.toAngle(soul.dir_));
+
+    soul.lastBattleMode = subMode_;
 }
 
-inline void SoulComponent::draw(sf::RenderWindow& window) {
-    if (display_) {
-        window.draw(lightSprite_);
-        window.draw(sprite_);
+inline void SoulComponent::BattleState::draw(SoulComponent& soul, sf::RenderWindow& window) {
+    if (soul.display_) {
+        window.draw(soul.lightSprite_);
+        window.draw(soul.sprite_);
     }
 }

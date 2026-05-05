@@ -113,7 +113,7 @@ inline void ButtonComponent::setSelection(int index) {
 }
 
 inline int ButtonComponent::getSelection() const {
-    return selectable_ ? selection_ : -1;
+    return selection_;
 }
 
 inline bool ButtonComponent::getSelected() {
