@@ -46,10 +46,10 @@ private:
     void onPhaseChanged(); // 玩家阶段切换回调
     void end();
 
-    void startActTargetSelection();
-    void startActOptionSelection();
-    void updateActMenuText();
-    void finishActResult();
+    void startBranchSelection();
+    void startBranchOptionSelection();
+    void updateMenuText();
+    void finishResult();
 
     AssetManager& assets_;
 
@@ -68,12 +68,14 @@ private:
     
     bool typingCompleted_ = false;
 
-    enum class ActBranchStep : uint8_t { None, TargetSelect, OptionSelect, Result };
-    ActBranchStep actBranchStep_ = ActBranchStep::None;
-    std::vector<std::string> actTargets_;
-    std::vector<std::vector<std::string>> actOptions_;
-    int actTargetIndex_ = 0;
-    int actOptionIndex_ = 0;
+    enum class BranchType : uint8_t { None, Act, Item, Mercy };
+    enum class BranchStep : uint8_t { None, TargetSelect, OptionSelect, Result };
+    BranchType currentBranchType_ = BranchType::None;
+    BranchStep currentBranchStep_ = BranchStep::None;
+    int targetIndex_ = 0;
+    int optionIndex_ = 0;
+
+    baseData::BattleOptions battleOptions_;
 
     baseData::Turn turn_;
 
@@ -95,12 +97,6 @@ TurnController::TurnController(AssetManager& assets)
     typer_.setFont(assets.getFont(Res::fonts::MENU_FONT));
     typer_.setSoundBuffer(assets.getSound(Res::sfx::SFX_VOICE_TYPER));
 
-    actTargets_ = {"enemy", "friend", "ally"};
-    actOptions_ = {
-        {"Check", "Talk", "Threaten"},
-        {"Compliment", "Joke", "Encourage"},
-        {"Heal", "Support", "Wait"}
-    };
 
     auto bg = background_.getLocalBounds();
     background_.setOrigin({bg.size.x / 2, bg.size.y / 2});
@@ -112,6 +108,8 @@ void TurnController::init() {
     battleClock_.restart();
     statusBar_.init();
 
+
+
     if (!music_.openFromFile(Res::audio::BATTLE_MUSIC)) { std::cerr << "Fail to load music\n"; }
 
     setTurnCount(0);
@@ -121,7 +119,8 @@ void TurnController::init() {
 }
 
 void TurnController::onTurnChanged() {
-    actBranchStep_ = ActBranchStep::None;
+    currentBranchType_ = BranchType::None;
+    currentBranchStep_ = BranchStep::None;
     if (turn_.currentOwner == Owner::Player) {
         soul_.setMode(SoulComponent::Mode::Menu);
         button_.setSelectable(true);
@@ -138,7 +137,8 @@ void TurnController::onTurnChanged() {
 void TurnController::onPhaseChanged() {
     if (turn_.currentOwner == Owner::Player) {
         if (turn_.currentPlayerPhase == PlayerPhase::Selecting) {
-            actBranchStep_ = ActBranchStep::None;
+            currentBranchType_ = BranchType::None;
+            currentBranchStep_ = BranchStep::None;
             button_.setSelectable(true);
             typer_.print(turnText_, 320.0f - 283.0f + 15.0f, 320.0f - 50.0f, 0.05f);
         }
@@ -148,11 +148,16 @@ void TurnController::onPhaseChanged() {
                 case 0: // FIGHT
                     break;
                 case 1: // ACT
-                    startActTargetSelection();
+                    currentBranchType_ = BranchType::Act;
+                    startBranchSelection();
                     break;
                 case 2: // ITEM
+                    currentBranchType_ = BranchType::Item;
+                    startBranchSelection();
                     break; 
                 case 3: // MERCY
+                    currentBranchType_ = BranchType::Mercy;
+                    startBranchSelection();
                     break;
                 
                 default:
@@ -162,82 +167,128 @@ void TurnController::onPhaseChanged() {
     }
 }
 
-void TurnController::startActTargetSelection() {
-    actBranchStep_ = ActBranchStep::TargetSelect;
-    actTargetIndex_ = 0;
-    actOptionIndex_ = 0;
+void TurnController::startBranchSelection() {
+    currentBranchStep_ = BranchStep::TargetSelect;
+    targetIndex_ = 0;
+    optionIndex_ = 0;
     button_.setSelectable(false);
-    updateActMenuText();
+    updateMenuText();
 }
 
-void TurnController::startActOptionSelection() {
-    actBranchStep_ = ActBranchStep::OptionSelect;
-    actOptionIndex_ = 0;
+void TurnController::startBranchOptionSelection() {
+    currentBranchStep_ = BranchStep::OptionSelect;
+    optionIndex_ = 0;
     button_.setSelectable(false);
-    //soul_.setMode(SoulComponent::Mode::Menu);
-    updateActMenuText();
+    updateMenuText();
 }
 
-void TurnController::finishActResult() {
+void TurnController::finishResult() {
+    currentBranchStep_ = BranchStep::Result;
     soul_.setDisplayable(false);
-    actBranchStep_ = ActBranchStep::Result;
-    std::string resultText = "*" + actOptions_[actTargetIndex_][actOptionIndex_] + " " + actTargets_[actTargetIndex_] + "\n";
+    std::string resultText;
+    switch (currentBranchType_) {
+        case BranchType::Act:
+            resultText = battleOptions_.actResults[targetIndex_][optionIndex_];
+            break;
+        case BranchType::Item:
+            resultText = battleOptions_.itemResults[targetIndex_][optionIndex_];
+            break;
+        case BranchType::Mercy:
+            resultText = battleOptions_.mercyResults[targetIndex_][optionIndex_];
+            break;
+        default:
+            resultText = "* Nothing happened.";
+            break;
+    }
     typer_.setEnableAnimation(true);
     typer_.print(resultText, 320.0f - 283.0f + 15.0f, 320.0f - 50.0f, 0.05f, true);
     setPlayerPhase(PlayerPhase::Result);
 }
 
-void TurnController::updateActMenuText() {
+void TurnController::updateMenuText() {
     const float startX = 320.0f - 283.0f + 50.0f;
     const float startY = 320.0f - 50.0f + 10.0f;
     const float lineHeight = 30.0f;
 
     typer_.setEnableAnimation(false);  // 禁用打字动画
 
-    if (actBranchStep_ == ActBranchStep::TargetSelect) {
-        std::vector<std::string> lines;
-        for (const auto& target : actTargets_) {
-            lines.push_back(target);
-        }
-        typer_.printInLine(lines, startX, startY, 0.05f);
-        soul_.setPosition(startX - 20.0f, startY + lineHeight + actTargetIndex_ * lineHeight - 15, true);
-    } else if (actBranchStep_ == ActBranchStep::OptionSelect) {
-        std::vector<std::string> lines;
-        for (const auto& option : actOptions_[actTargetIndex_]) {
-            lines.push_back(option);
-        }
-        typer_.printInLine(lines, startX, startY, 0.05f);
-        soul_.setPosition(startX - 20.0f, startY + lineHeight + actOptionIndex_ * lineHeight -15, true);
+    std::vector<std::string> lines;
+    switch (currentBranchType_) {
+        case BranchType::Act:
+            if (currentBranchStep_ == BranchStep::TargetSelect) {
+                lines = battleOptions_.actTargets;
+            } else if (currentBranchStep_ == BranchStep::OptionSelect) {
+                lines = battleOptions_.actOptions[targetIndex_];
+            }
+            break;
+        case BranchType::Item:
+            if (currentBranchStep_ == BranchStep::TargetSelect) {
+                lines = battleOptions_.itemTargets;
+            } else if (currentBranchStep_ == BranchStep::OptionSelect) {
+                lines = battleOptions_.itemOptions[targetIndex_];
+            }
+            break;
+        case BranchType::Mercy:
+            if (currentBranchStep_ == BranchStep::TargetSelect) {
+                lines = battleOptions_.mercyTargets;
+            } else if (currentBranchStep_ == BranchStep::OptionSelect) {
+                lines = battleOptions_.mercyOptions[targetIndex_];
+            }
+            break;
+        default:
+            break;
     }
-    
+
+    typer_.printInLine(lines, startX, startY, 0.05f);
+
+    if (currentBranchStep_ == BranchStep::TargetSelect) {
+        soul_.setPosition(startX - 20.0f, startY + lineHeight + targetIndex_ * lineHeight - 15, true);
+    } else if (currentBranchStep_ == BranchStep::OptionSelect) {
+        soul_.setPosition(startX - 20.0f, startY + lineHeight + optionIndex_ * lineHeight - 15, true);
+    }
 }
 
 inline void TurnController::handleEvent(const sf::Event& event) {
     const auto* keyEvent = event.getIf<sf::Event::KeyReleased>();
-    if (turn_.currentOwner == Owner::Player && turn_.currentPlayerPhase == PlayerPhase::OnBranch && actBranchStep_ != ActBranchStep::None && keyEvent) {
-        if (actBranchStep_ == ActBranchStep::TargetSelect) {
-            if (keyEvent->code == sf::Keyboard::Key::Up) {
-                actTargetIndex_ = (actTargetIndex_ - 1 + static_cast<int>(actTargets_.size())) % static_cast<int>(actTargets_.size());
-                updateActMenuText();
-            } else if (keyEvent->code == sf::Keyboard::Key::Down) {
-                actTargetIndex_ = (actTargetIndex_ + 1) % static_cast<int>(actTargets_.size());
-                updateActMenuText();
-            } else if (keyEvent->code == sf::Keyboard::Key::Enter || keyEvent->code == sf::Keyboard::Key::Z) {
-                startActOptionSelection();
+    if (turn_.currentOwner == Owner::Player && turn_.currentPlayerPhase == PlayerPhase::OnBranch && currentBranchStep_ != BranchStep::None && keyEvent) {
+        if (currentBranchStep_ == BranchStep::TargetSelect) {
+            int maxTargets = 0;
+            switch (currentBranchType_) {
+                case BranchType::Act: maxTargets = battleOptions_.actTargets.size(); break;
+                case BranchType::Item: maxTargets = battleOptions_.itemTargets.size(); break;
+                case BranchType::Mercy: maxTargets = battleOptions_.mercyTargets.size(); break;
+                default: break;
             }
-        } else if (actBranchStep_ == ActBranchStep::OptionSelect) {
-            const auto& options = actOptions_[actTargetIndex_];
             if (keyEvent->code == sf::Keyboard::Key::Up) {
-                actOptionIndex_ = (actOptionIndex_ - 1 + static_cast<int>(options.size())) % static_cast<int>(options.size());
-                updateActMenuText();
+                targetIndex_ = (targetIndex_ - 1 + maxTargets) % maxTargets;
+                updateMenuText();
             } else if (keyEvent->code == sf::Keyboard::Key::Down) {
-                actOptionIndex_ = (actOptionIndex_ + 1) % static_cast<int>(options.size());
-                updateActMenuText();
+                targetIndex_ = (targetIndex_ + 1) % maxTargets;
+                updateMenuText();
             } else if (keyEvent->code == sf::Keyboard::Key::Enter || keyEvent->code == sf::Keyboard::Key::Z) {
-                finishActResult();
+                startBranchOptionSelection();
             }
-        } else {
-            // 其他阶段的按键处理
+        } else if (currentBranchStep_ == BranchStep::OptionSelect) {
+            int maxOptions = 0;
+            switch (currentBranchType_) {
+                case BranchType::Act: maxOptions = battleOptions_.actOptions[targetIndex_].size(); break;
+                case BranchType::Item: maxOptions = battleOptions_.itemOptions[targetIndex_].size(); break;
+                case BranchType::Mercy: maxOptions = battleOptions_.mercyOptions[targetIndex_].size(); break;
+                default: break;
+            }
+            if (keyEvent->code == sf::Keyboard::Key::Up) {
+                optionIndex_ = (optionIndex_ - 1 + maxOptions) % maxOptions;
+                updateMenuText();
+            } else if (keyEvent->code == sf::Keyboard::Key::Down) {
+                optionIndex_ = (optionIndex_ + 1) % maxOptions;
+                updateMenuText();
+            } else if (keyEvent->code == sf::Keyboard::Key::Enter || keyEvent->code == sf::Keyboard::Key::Z) {
+                finishResult();
+            }
+        } else if (currentBranchStep_ == BranchStep::Result) {
+            if ((keyEvent->code == sf::Keyboard::Key::Enter || keyEvent->code == sf::Keyboard::Key::Z) && typer_.isFinished()) {
+                setPlayerPhase(PlayerPhase::Selecting);
+            }
         }
     }
 
@@ -278,7 +329,8 @@ inline void TurnController::update(float dt) {
             button_.setSelectable(false);
         }
         else if(turn_.currentPlayerPhase == PlayerPhase::Result && typingCompleted_){
-            actBranchStep_ = ActBranchStep::None;
+            currentBranchType_ = BranchType::None;
+            currentBranchStep_ = BranchStep::None;
             soul_.setDir(0.0f);
             soul_.setMode(SoulComponent::Mode::Normal);
             nextTurn();
