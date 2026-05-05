@@ -185,6 +185,8 @@ inline void SoulComponent::MenuState::draw(SoulComponent& soul, sf::RenderWindow
 inline void SoulComponent::BattleState::update(SoulComponent& soul, const BoxComponent& box) {
     using BattleUtils::distToSegment;
 
+    soul.smoothPosition_ = false;
+
     auto bounds = soul.sprite_.getLocalBounds();
     float soulRadius = std::max(
         (bounds.size.x * soul.sprite_.getScale().x) / 2.0f,

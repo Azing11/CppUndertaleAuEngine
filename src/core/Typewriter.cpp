@@ -120,10 +120,24 @@ void Typewriter::reset() {
     shakeTime = 0.0f;
 }
 
-void Typewriter::print(const std::string& text, float x, float y, float delay) {
+void Typewriter::print(const std::string& text, float x, float y, float delay, bool autoEnter) {
     setText(text);
     setPosition(x, y);
     setDelay(delay);
+    autoEnter_ = autoEnter;
+}
+
+void Typewriter::printInLine(const std::vector<std::string>& lines, float x, float y, float delay, bool autoEnter) {
+    std::string text;
+    for (size_t i = 0; i < lines.size(); ++i) {
+        text += lines[i];
+        if (i + 1 < lines.size()) text += '\n';
+    }
+    print(text, x, y, delay, autoEnter);
+}
+
+void Typewriter::setEnableAnimation(bool enable) {
+    enableAnimation_ = enable;
 }
 
 void Typewriter::setSoundBuffer(const sf::SoundBuffer& buffer) {
@@ -137,9 +151,8 @@ void Typewriter::setSoundBuffer(const sf::SoundBuffer& buffer) {
 bool Typewriter::update(float deltaTime) {
     shakeTime += deltaTime;
     if (currentIndex < styledChars.size()) {
-        // 检查跳过键
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::X) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift)) {
-            // 跳过动画：快速添加所有剩余字符
+        if (!enableAnimation_) {
+            // 立即显示所有字符
             while (currentIndex < styledChars.size()) {
                 currentText.push_back(styledChars[currentIndex].character);
                 currentIndex++;
@@ -150,19 +163,35 @@ bool Typewriter::update(float deltaTime) {
                 sc.age = entryDuration_;
             }
         } else {
-            timer += deltaTime;
-            if (timer >= delay) {
-                currentText.push_back(styledChars[currentIndex].character);
-                currentIndex++;
+            // 检查跳过键
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::X) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift)) {
+                // 跳过动画：快速添加所有剩余字符
+                while (currentIndex < styledChars.size()) {
+                    currentText.push_back(styledChars[currentIndex].character);
+                    currentIndex++;
+                }
                 timer = 0.0f;
-                if (typerSound_) typerSound_->play(); // 播放打字音效
+                // 设置所有字符的age为entryDuration_，使它们立即可见
+                for (auto& sc : styledChars) {
+                    sc.age = entryDuration_;
+                }
+            } else {
+                timer += deltaTime;
+                if (timer >= delay) {
+                    currentText.push_back(styledChars[currentIndex].character);
+                    currentIndex++;
+                    timer = 0.0f;
+                    if (typerSound_) typerSound_->play(); // 播放打字音效
+                }
             }
         }
     } else {
         // 打字完成，检查完成键
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Enter) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Z)) {
-            reset();
-            return true;
+        if(autoEnter_) {
+            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Enter) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Z)) {
+                reset();
+                return true;
+            }
         }
     }
 
@@ -179,9 +208,16 @@ void Typewriter::draw(sf::RenderTarget& target) {
 
     float x = position_.x;
     float y = position_.y;
+    float lineSpacing = characterSize_ * 1.2f;
 
     for (size_t i = 0; i < currentIndex; ++i) {
         const auto& styledChar = styledChars[i];
+        if (styledChar.character == '\n') {
+            x = position_.x;
+            y += lineSpacing;
+            continue;
+        }
+
         std::string charStr(1, styledChar.character);
         sf::Text charText(*font_, charStr, characterSize_);
 

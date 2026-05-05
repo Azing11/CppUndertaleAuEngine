@@ -31,6 +31,9 @@ private:
     sf::Color parseColor(const std::string& colorName) const;
     std::string parseToken(const std::string& raw, size_t& pos) const;
 
+    bool autoEnter_ = false;
+    bool enableAnimation_ = true;
+
 public:
     // 构造函数，传入字符大小
     Typewriter(unsigned int characterSize = 30);
@@ -54,7 +57,13 @@ public:
     void reset();
 
     // 打印文本
-    void print(const std::string& text, float x, float y, float delay = 0.05f);
+    void print(const std::string& text, float x, float y, float delay = 0.05f, bool autoEnter = false);
+
+    // 打印带指针的选项列表
+    void printInLine(const std::vector<std::string>& lines, float x, float y, float delay = 0.05f, bool autoEnter = false);
+
+    // 设置是否启用打字动画
+    void setEnableAnimation(bool enable);
 
     // 设置打字音效缓冲区
     void setSoundBuffer(const sf::SoundBuffer& buffer);
